@@ -68,7 +68,11 @@ export class Keeper {
     this.handleLifeCycle();
   }
 
-  handleLifeCycle() {
+  async handleLifeCycle() {
+    // startup logic
+    await this.startup();
+
+    // on each block logic
     let processedBlock: number;
     let isProcessing = false;
     this.provider.on("block", async () => {
@@ -85,6 +89,22 @@ export class Keeper {
         isProcessing = false;
       }
     });
+  }
+
+  async startup() {
+    await this.approveSystemCoinForJoinCoin();
+  }
+
+  async approveSystemCoinForJoinCoin() {
+    console.info("Approving system coin to be used by coin join.");
+    const joinCoin = this.geb.contracts.joinCoin;
+    const systemCoin = this.geb.contracts.systemCoin;
+    const tx = await systemCoin.approve(
+      joinCoin.address,
+      ethers.constants.MaxUint256
+    );
+    await tx.wait();
+    console.info("Approved keeper's system coins to be used by coin join.");
   }
 
   async checkSafes(currentBlockNumber: number) {

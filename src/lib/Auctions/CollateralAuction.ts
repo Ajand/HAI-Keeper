@@ -13,8 +13,9 @@ export class CollateralAuction {
   id: ethers.BigNumber;
   contract: ICollateralAuctionHouse;
 
-  deleted: boolean = false;
+  //deleted: boolean = false;
 
+  initiated: boolean = false;
   auctionData: CollateralAuctionData | undefined;
 
   constructor(id: ethers.BigNumber, contract: ICollateralAuctionHouse) {
@@ -25,10 +26,21 @@ export class CollateralAuction {
   }
 
   async init() {
-    console.log("initiating the auction");
-
     this.auctionData = await this.contract.auctions(this.id);
+    this.initiated = true;
+  }
 
-    console.log(this.auctionData);
+  async reload() {
+    this.auctionData = await this.contract.auctions(this.id);
+  }
+
+  public get deleted(): boolean {
+    // TODO: This need to be improved
+    // Need to handle reorg
+    if (!this.auctionData) return false;
+    if (this.auctionData.amountToSell.eq(0)) {
+      return true;
+    }
+    return false;
   }
 }

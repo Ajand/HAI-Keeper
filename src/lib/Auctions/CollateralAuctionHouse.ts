@@ -58,9 +58,17 @@ export class CollateralAuctionHouse {
         .map((v, i) => {
           return ethers.BigNumber.from(this.auctions.length + i + 1);
         });
+
       notFollowedActionsIds.forEach((auctionId) => {
         this.auctions.push(new CollateralAuction(auctionId, this.contract));
       });
+
+      for (const auction of this.auctions) {
+        console.log(auction.auctionData);
+        if (auction.initiated && !auction.deleted) {
+          await auction.reload();
+        }
+      }
     }
   }
 }
