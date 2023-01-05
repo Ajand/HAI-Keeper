@@ -93,6 +93,7 @@ export class Keeper {
 
   async startup() {
     await this.approveSystemCoinForJoinCoin();
+    await this.joinTheCoins();
   }
 
   async approveSystemCoinForJoinCoin() {
@@ -105,6 +106,19 @@ export class Keeper {
     );
     await tx.wait();
     console.info("Approved keeper's system coins to be used by coin join.");
+  }
+
+  async joinTheCoins() {
+    console.info("Joining the coinst to the coin join.");
+    const joinCoin = this.geb.contracts.joinCoin;
+    const systemCoin = this.geb.contracts.systemCoin;
+    const keeperBalance = await systemCoin.balanceOf(this.signer.address);
+    if (keeperBalance.eq(0)) {
+      return console.warn("There is no system coin in the keeper to join.");
+    }
+    const tx = await joinCoin.join(systemCoin.address, keeperBalance);
+    await tx.wait();
+    console.info(`Joined ${keeperBalance} system coin.`);
   }
 
   async checkSafes(currentBlockNumber: number) {
