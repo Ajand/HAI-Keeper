@@ -43,4 +43,8 @@ export class CollateralAuction {
     }
     return false;
   }
+
+  async buy(amount: number) {
+    console.log(amount);
+  }
 }

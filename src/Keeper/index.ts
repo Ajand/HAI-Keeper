@@ -23,6 +23,8 @@ export class Keeper {
 
   liquidatedSafes: Set<string> = new Set();
 
+  coinBalance: ethers.BigNumber = ethers.BigNumber.from(0);
+
   constructor(argsList: string[], overrides: KeeperOverrides = {}) {
     this.args = ArgsParser(argsList);
 
@@ -94,6 +96,7 @@ export class Keeper {
   async startup() {
     await this.approveSystemCoinForJoinCoin();
     await this.joinTheCoins();
+    await this.getSystemCoinBalance();
   }
 
   async approveSystemCoinForJoinCoin() {
@@ -114,11 +117,27 @@ export class Keeper {
     const systemCoin = this.geb.contracts.systemCoin;
     const keeperBalance = await systemCoin.balanceOf(this.signer.address);
     if (keeperBalance.eq(0)) {
-      return console.warn("There is no system coin in the keeper to join.");
+      await this.getSystemCoinBalance();
+      if (this.coinBalance.eq(0)) {
+        return console.warn(
+          "There is no system coin in the keeper. The keeper can not participate in the auctions."
+        );
+      } else {
+        return console.info(
+          "All of the system coin is already joined. Skipping the joining."
+        );
+      }
     }
-    const tx = await joinCoin.join(systemCoin.address, keeperBalance);
+
+    const tx = await joinCoin.join(this.signer.address, keeperBalance);
     await tx.wait();
     console.info(`Joined ${keeperBalance} system coin.`);
+  }
+
+  async getSystemCoinBalance() {
+    this.coinBalance = await this.geb.contracts.safeEngine.coinBalance(
+      this.signer.address
+    );
   }
 
   async checkSafes(currentBlockNumber: number) {

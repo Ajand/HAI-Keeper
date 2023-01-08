@@ -9,6 +9,8 @@ import { mintHai } from "./fixtures";
 import { REQUIRED_ARGS_KEY_VALUE } from "../tests/contexts/args";
 import { keyValueArgsToList } from "../tests/helpers";
 
+import { RadFromWad } from "../src/lib/Math";
+
 import Keeper from "../src/Keeper";
 
 const ALL_ARGS_KEY_VALUE = {
@@ -16,7 +18,7 @@ const ALL_ARGS_KEY_VALUE = {
 };
 
 describe("Keeper startup logic", () => {
-  /*it("Should have approvals for the coin join after startup", async () => {
+  it("Should have approvals for the coin join after startup", async () => {
     const { provider, openSafeAndGenerateDebt, geb, fixtureWallet } =
       await loadFixture(mintHai);
 
@@ -46,7 +48,7 @@ describe("Keeper startup logic", () => {
     expect(
       await systemCoin.allowance(keeper.signer.address, joinCoin.address)
     ).to.be.equal(ethers.constants.MaxUint256);
-  });*/
+  });
 
   it("Should join to the coin join after startup", async () => {
     const { provider, openSafeAndGenerateDebt, geb, fixtureWallet } =
@@ -93,11 +95,12 @@ describe("Keeper startup logic", () => {
       }
     );
 
-    await sleep(2000);
+    await sleep(5000);
 
     expect(await systemCoin.balanceOf(keeper.signer.address)).to.be.equal(0);
+
     expect(await safeEngine.coinBalance(keeper.signer.address)).to.be.equal(
-      fixtureWalletHaiBalance
+      RadFromWad(fixtureWalletHaiBalance)
     );
   });
 });

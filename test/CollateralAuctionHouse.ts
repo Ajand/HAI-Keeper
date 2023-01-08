@@ -16,12 +16,26 @@ const ALL_ARGS_KEY_VALUE = {
 };
 
 describe("Auction House Tests", () => {
-  it("Should liquidate liquidatable safes", async () => {
+  it("Should load created auctions", async () => {
     const { provider, openSafeAndGenerateDebt, geb, fixtureWallet } =
       await loadFixture(mintHai);
 
     await mineBlocks(100);
     const startingBlock = Number(process.env.FORK_BLOCK_NUMBER) + 100;
+
+    const joinCoin = geb.contracts.joinCoin;
+    const systemCoin = geb.contracts.systemCoin;
+    const safeEngine = geb.contracts.safeEngine;
+
+    const collateralAmount = ethers.utils.parseEther("5").toHexString();
+    const haiAmount = ethers.utils.parseEther("7500").toHexString();
+    const safeHaiAmount = ethers.utils.parseEther("1000").toHexString();
+
+    const safe = await openSafeAndGenerateDebt(collateralAmount, safeHaiAmount);
+
+    const keeperAddress = "0x045808bd4cc3ef299Be6b2850CDCD71e394e105C";
+
+    await systemCoin.transfer(keeperAddress, safeHaiAmount);
 
     const keeper = new Keeper(
       keyValueArgsToList({
@@ -37,10 +51,6 @@ describe("Auction House Tests", () => {
       keeper.signer.address,
       ethers.utils.parseEther("1000000").toHexString(),
     ]);
-
-    const collateralAmount = ethers.utils.parseEther("5").toHexString();
-    const haiAmount = ethers.utils.parseEther("7500").toHexString();
-    const safeHaiAmount = ethers.utils.parseEther("1000").toHexString();
 
     await sleep(2000);
 
@@ -65,5 +75,13 @@ describe("Auction House Tests", () => {
     expect(auctionHouse.auctions[0].id).to.be.equal(1);
 
     await sleep(500);
+
+    console.log(
+      "keeper coin balance in coin join: ",
+      keeper.coinBalance,
+      await geb.contracts.safeEngine.coinBalance(keeperAddress)
+    );
+
+    //const targetAuction = auctionHouse.auctions[0].buy();
   });
 });
