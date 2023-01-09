@@ -39,13 +39,42 @@ export class CollateralAuctionHouse {
   }
 
   async loadState() {
-    console.log("loading state ...");
+    console.info("Initializing collateral auction house");
     await this.handleAuctionsState();
+    await this.handleSafeApprovalModification();
+    this.loaded = true;
+    console.info("Collateral auction house initialized");
   }
 
   async reloadState() {
-    console.log("reloading state ...");
+    console.info("Reloading collateral auction house state");
     await this.handleAuctionsState();
+    console.info("Collateral auction house state reloaded");
+  }
+
+  async handleSafeApprovalModification() {
+    const signerAddress = await this.geb.signer?.getAddress();
+    const isCollateralApprovedForAddress =
+      await this.geb.contracts.safeEngine.safeRights(
+        String(signerAddress),
+        this.contract.address
+      );
+    if (!isCollateralApprovedForAddress) {
+      console.info(
+        "Approving keeper's address to be used by collateral auction house."
+      );
+      const tx = await this.geb.contracts.safeEngine.approveSAFEModification(
+        this.contract.address
+      );
+      await tx.wait();
+      console.info(
+        "Keeper's address approved to be used by collateral auction house."
+      );
+    } else {
+      console.info(
+        "Keeper's address is already approved to be used by collateral auction house."
+      );
+    }
   }
 
   async handleAuctionsState() {
@@ -60,7 +89,13 @@ export class CollateralAuctionHouse {
         });
 
       notFollowedActionsIds.forEach((auctionId) => {
-        this.auctions.push(new CollateralAuction(auctionId, this.contract));
+        this.auctions.push(
+          new CollateralAuction(
+            auctionId,
+            this.contract,
+            this.geb.contracts.safeEngine
+          )
+        );
       });
 
       for (const auction of this.auctions) {
