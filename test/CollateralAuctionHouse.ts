@@ -11,6 +11,8 @@ import { keyValueArgsToList } from "../tests/helpers";
 
 import Keeper from "../src/Keeper";
 
+import { WadFromRad } from "../src/lib/Math";
+
 const ALL_ARGS_KEY_VALUE = {
   ...REQUIRED_ARGS_KEY_VALUE,
 };
@@ -76,12 +78,18 @@ describe("Auction House Tests", () => {
 
     await sleep(500);
 
-    console.log(
-      "keeper coin balance in coin join: ",
-      keeper.coinBalance,
-      await geb.contracts.safeEngine.coinBalance(keeperAddress)
+    const getCollateralBalance = async () =>
+      await geb.contracts.safeEngine.tokenCollateral(
+        keeper.collateral.tokenData.bytes32String,
+        keeperAddress
+      );
+
+    const auctionData = await auctionHouse.contract.auctions(
+      auctionHouse.auctions[0].id
     );
 
-    //const targetAuction = auctionHouse.auctions[0].buy();
+    await auctionHouse.auctions[0].buy(WadFromRad(keeper.coinBalance));
+
+    expect(auctionData.amountToSell).to.be.equal(await getCollateralBalance());
   });
 });

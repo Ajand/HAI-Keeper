@@ -93,7 +93,8 @@ export class CollateralAuctionHouse {
           new CollateralAuction(
             auctionId,
             this.contract,
-            this.geb.contracts.safeEngine
+            this.geb.contracts.safeEngine,
+            this.collateral
           )
         );
       });
