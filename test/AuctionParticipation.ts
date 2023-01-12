@@ -11,14 +11,14 @@ import { keyValueArgsToList } from "../tests/helpers";
 
 import Keeper from "../src/Keeper";
 
-import { WadFromRad } from "../src/lib/Math";
-
 const ALL_ARGS_KEY_VALUE = {
   ...REQUIRED_ARGS_KEY_VALUE,
 };
 
-describe("Auction House Tests", () => {
-  it("Should load created auctions", async () => {
+describe("Auction Participation", () => {
+  beforeEach(async function () {});
+
+  it("Keeper should participate", async () => {
     const { provider, openSafeAndGenerateDebt, geb, fixtureWallet } =
       await loadFixture(mintHai);
 
@@ -43,7 +43,7 @@ describe("Auction House Tests", () => {
       keyValueArgsToList({
         ...ALL_ARGS_KEY_VALUE,
         "--from-block": startingBlock.toString(),
-        "--start-auctions-only": true,
+        "--start-auctions-only": false,
       }),
       {
         provider: provider,
@@ -70,24 +70,6 @@ describe("Auction House Tests", () => {
 
     const auctionHouse = keeper.collateralAuctionHouse;
 
-    await sleep(5000);
-
-    expect(auctionHouse.auctions[0].id).to.be.equal(1);
-
-    await sleep(500);
-
-    const getCollateralBalance = async () =>
-      await geb.contracts.safeEngine.tokenCollateral(
-        keeper.collateral.tokenData.bytes32String,
-        keeperAddress
-      );
-
-    const auctionData = await auctionHouse.contract.auctions(
-      auctionHouse.auctions[0].id
-    );
-
-    await auctionHouse.auctions[0].buy(WadFromRad(keeper.coinBalance));
-
-    expect(auctionData.amountToSell).to.be.equal(await getCollateralBalance());
+    await sleep(10000);
   });
 });

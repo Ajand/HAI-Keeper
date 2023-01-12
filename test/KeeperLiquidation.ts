@@ -15,7 +15,7 @@ const ALL_ARGS_KEY_VALUE = {
   ...REQUIRED_ARGS_KEY_VALUE,
 };
 
-describe("Fixture tests", () => {
+describe("Keeper Liquidation", () => {
   beforeEach(async function () {});
 
   it("Should liquidate liquidatable safes", async () => {

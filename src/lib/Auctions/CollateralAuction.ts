@@ -34,11 +34,10 @@ export class CollateralAuction {
     this.contract = contract;
     this.safeEngine = safeEngine;
     this.collateral = collateral;
-
-    this.init();
   }
 
   async init() {
+    console.log(this.id);
     this.auctionData = await this.contract.auctions(this.id);
     this.initiated = true;
   }
@@ -65,6 +64,7 @@ export class CollateralAuction {
     );
     const tx = await this.contract.buyCollateral(this.id, amount);
     await tx.wait();
+
     // TODO: add more info in this log
     console.info(
       `Successfully bought ${this.collateral.tokenData.symbol} with ${FormatWad(

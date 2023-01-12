@@ -88,19 +88,18 @@ export class CollateralAuctionHouse {
           return ethers.BigNumber.from(this.auctions.length + i + 1);
         });
 
-      notFollowedActionsIds.forEach((auctionId) => {
-        this.auctions.push(
-          new CollateralAuction(
-            auctionId,
-            this.contract,
-            this.geb.contracts.safeEngine,
-            this.collateral
-          )
+      for (const auctionId of notFollowedActionsIds) {
+        const auction = new CollateralAuction(
+          auctionId,
+          this.contract,
+          this.geb.contracts.safeEngine,
+          this.collateral
         );
-      });
+        await auction.init();
+        this.auctions.push(auction);
+      }
 
       for (const auction of this.auctions) {
-        console.log(auction.auctionData);
         if (auction.initiated && !auction.deleted) {
           await auction.reload();
         }

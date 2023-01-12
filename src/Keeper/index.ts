@@ -3,13 +3,22 @@ import { ethers, utils as ethersUtils } from "ethers";
 import { Geb, utils } from "@hai-on-op/sdk";
 import { KeyPassSplitter, createWallet } from "./Initializer/SignerFactory";
 import { getPastSafeModifications } from "./EventHandlers";
+import { NonceManager } from "@ethersproject/experimental";
 
 import { Collateral, SafeHistory, CollateralAuctionHouse } from "../lib";
+
+import { WadFromRad } from "../lib/Math";
 
 interface KeeperOverrides {
   provider?: ethers.providers.JsonRpcProvider;
   signer?: ethers.Signer;
 }
+
+export const sleep = async (timeout: number) => {
+  return new Promise<void>((resolve) => {
+    setTimeout(() => resolve(), timeout);
+  });
+};
 
 export class Keeper {
   args;
@@ -24,6 +33,8 @@ export class Keeper {
   liquidatedSafes: Set<string> = new Set();
 
   coinBalance: ethers.BigNumber = ethers.BigNumber.from(0);
+
+  isBidding: boolean;
 
   constructor(argsList: string[], overrides: KeeperOverrides = {}) {
     this.args = ArgsParser(argsList);
@@ -67,6 +78,8 @@ export class Keeper {
       this.collateral
     );
 
+    this.isBidding = this.args["--start-auctions-only"] ? false : true;
+
     this.handleLifeCycle();
   }
 
@@ -89,6 +102,8 @@ export class Keeper {
 
         processedBlock = await this.provider.getBlockNumber();
         isProcessing = false;
+
+        this.handleBidding();
       }
     });
   }
@@ -182,6 +197,24 @@ export class Keeper {
       geb: this.geb,
       provider: this.provider,
     })(startingBlock, endBlock, "");
+  }
+
+  async handleBidding() {
+    if (this.isBidding) {
+      await this.collateralAuctionHouse.handleAuctionsState();
+
+      const auctions = this.collateralAuctionHouse.auctions;
+
+      for (const auction of auctions) {
+        if (!auction.deleted) {
+          // This random sleep helps in nonce manager
+          await sleep(Math.floor(Math.random() * 1000 * 2));
+          await this.getSystemCoinBalance();
+          await auction.buy(WadFromRad(this.coinBalance));
+          await auction.reload();
+        }
+      }
+    }
   }
 }
 
