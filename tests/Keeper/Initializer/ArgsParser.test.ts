@@ -1,13 +1,23 @@
 import { ArgsParser, ARGS_DEF } from "../../../src/Keeper/Initializer";
 
 interface KeyValue {
-  [key: string]: string;
+  [key: string]: string | boolean | Array<string>;
 }
 
 const createTestContext = () => {
   const keyValueArgsToList = (keyValue: KeyValue) => {
     return Object.entries(keyValue).reduce((pV: string[], cV) => {
-      return [...pV, cV[0], cV[1]];
+      if (typeof cV[1] === "boolean") {
+        if (cV[1] === true) {
+          return [...pV, cV[0]];
+        } else {
+          return [...pV];
+        }
+      } else if (Array.isArray(cV[1])) {
+        return [...pV, cV[0], ...cV[1]];
+      } else {
+        return [...pV, cV[0], cV[1]];
+      }
     }, []);
   };
 
@@ -28,6 +38,15 @@ const createTestContext = () => {
   const OPTIONAL_ARGS_KEY_VALUE = {
     "--rpc-timeout": "30",
     "--type": "surplus",
+    "--system": "open-dollar",
+    "--colatteral-type": "ETH-B",
+    "--bid-only": true,
+    "--start-auctions-only": true,
+    "--settle-auctions-for": [
+      "0x843B6b0fBC1300316C1294aE29AFd961807a9D29",
+      "0x4D9cE39323e83Cd1b2810A97707a3B25474d05D6",
+      "0x4D9cE39323e83Cd1b2810A97707a3B25474d05D6",
+    ],
   };
 
   const ALL_ARGS_KEY_VALUE = {
@@ -40,12 +59,21 @@ const createTestContext = () => {
     "--rpc-timeout": Number(ALL_ARGS_KEY_VALUE["--rpc-timeout"]),
     "--eth-from": String(ALL_ARGS_KEY_VALUE["--eth-from"]),
     "--eth-key": String(ALL_ARGS_KEY_VALUE["--eth-key"]),
+    "--system": String(ALL_ARGS_KEY_VALUE["--system"]),
+    "--colatteral-type": String(ALL_ARGS_KEY_VALUE["--colatteral-type"]),
+    "--bid-only": Boolean(ALL_ARGS_KEY_VALUE["--bid-only"]),
+    "--start-auctions-only": Boolean(
+      ALL_ARGS_KEY_VALUE["--start-auctions-only"]
+    ),
+    "--settle-auctions-for": [
+      "0x843B6b0fBC1300316C1294aE29AFd961807a9D29",
+      "0x4D9cE39323e83Cd1b2810A97707a3B25474d05D6",
+    ].map((address) => address.toLowerCase()),
   };
 
   const REQUIRED_ARGS_LIST = keyValueArgsToList(REQUIRED_ARGS_KEY_VALUE);
 
   const OPTIONAL_ARGS_LIST = keyValueArgsToList(OPTIONAL_ARGS_KEY_VALUE);
-
   const ALL_ARGS_LIST = keyValueArgsToList(ALL_ARGS_KEY_VALUE);
 
   return {
@@ -66,8 +94,6 @@ describe("ArgsParser", () => {
     REQUIRED_ARGS_KEY_VALUE,
     REQUIRED_ARGS_LIST,
     OPTIONAL_ARGS_KEY_VALUE,
-    OPTIONAL_ARGS_LIST,
-    ALL_ARGS_KEY_VALUE,
     ALL_ARGS_LIST,
     ALL_ARGS_DESIRED_OUTCOME,
   } = createTestContext();
@@ -90,7 +116,7 @@ describe("ArgsParser", () => {
       // Use type assertion to access properties dynamically
       // Expect that the parsed arguments match the desired outcomes
       it(`Should parse key ${desired[0]} as ${desired[1]}`, () => {
-        expect(args[desired[0]]).toBe(desired[1]);
+        expect(args[desired[0]]).toEqual(desired[1]);
       });
       // @ts-ignore
     });
@@ -111,7 +137,6 @@ describe("ArgsParser", () => {
     Object.keys(REQUIRED_ARGS_KEY_VALUE).forEach((requiredKey) => {
       // Expect that running ArgsParser with the missing required argument list throws an error
       it(`Must throw an error if ${requiredKey} is missing`, () => {
-        console.log(argsList);
         expect(() => ArgsParser(argsList)).toThrow(
           `missing required argument: ${requiredKey}`
         );
