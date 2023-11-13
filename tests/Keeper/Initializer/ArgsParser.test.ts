@@ -47,6 +47,23 @@ const createTestContext = () => {
       "0x4D9cE39323e83Cd1b2810A97707a3B25474d05D6",
       "0x4D9cE39323e83Cd1b2810A97707a3B25474d05D6",
     ],
+    "--min-auction": "6",
+    "--max-auctions": "2000",
+    "--min-collateral-lot": "4.5",
+    "--bid-check-interval": "15.6",
+    "--bid-delay": "14.2",
+    "--block-check-interval": "19.2",
+    "--shard-id": "5",
+    "--graph-endpoints": "https://graph.co",
+    "--graph-block-threshold": "86",
+    "--from-block": "823",
+    "--safe-engine-system-coin-target": "2999",
+    "--keep-system-coin-in-safe-engine-on-exit": true,
+    "--keep-collateral-in-safe-engine-on-exit": true,
+    "--return-collateral-interval": "1000",
+    "--swap-collateral": true,
+    "--max-swap-slippage": "0.05",
+    "--flash-swap": true,
   };
 
   const ALL_ARGS_KEY_VALUE = {
@@ -69,6 +86,35 @@ const createTestContext = () => {
       "0x843B6b0fBC1300316C1294aE29AFd961807a9D29",
       "0x4D9cE39323e83Cd1b2810A97707a3B25474d05D6",
     ].map((address) => address.toLowerCase()),
+    "--min-auction": Number(ALL_ARGS_KEY_VALUE["--min-auction"]),
+    "--max-auctions": Number(ALL_ARGS_KEY_VALUE["--max-auctions"]),
+    "--min-collateral-lot": Number(ALL_ARGS_KEY_VALUE["--min-collateral-lot"]),
+    "--bid-check-interval": Number(ALL_ARGS_KEY_VALUE["--bid-check-interval"]),
+    "--bid-delay": Number(ALL_ARGS_KEY_VALUE["--bid-delay"]),
+    "--block-check-interval": Number(
+      ALL_ARGS_KEY_VALUE["--block-check-interval"]
+    ),
+    "--shard-id": Number(ALL_ARGS_KEY_VALUE["--shard-id"]),
+    "--graph-endpoints": String(ALL_ARGS_KEY_VALUE["--graph-endpoints"]),
+    "--graph-block-threshold": Number(
+      ALL_ARGS_KEY_VALUE["--graph-block-threshold"]
+    ),
+    "--from-block": Number(ALL_ARGS_KEY_VALUE["--from-block"]),
+    "--safe-engine-system-coin-target": Number(
+      ALL_ARGS_KEY_VALUE["--safe-engine-system-coin-target"]
+    ),
+    "--keep-system-coin-in-safe-engine-on-exit": Boolean(
+      ALL_ARGS_KEY_VALUE["--keep-system-coin-in-safe-engine-on-exit"]
+    ),
+    "--keep-collateral-in-safe-engine-on-exit": Boolean(
+      ALL_ARGS_KEY_VALUE["--keep-collateral-in-safe-engine-on-exit"]
+    ),
+    "--return-collateral-interval": Number(
+      ALL_ARGS_KEY_VALUE["--return-collateral-interval"]
+    ),
+    "--swap-collateral": Boolean(ALL_ARGS_KEY_VALUE["--swap-collateral"]),
+    "--max-swap-slippage": Number(ALL_ARGS_KEY_VALUE["--max-swap-slippage"]),
+    "--flash-swap": Boolean(ALL_ARGS_KEY_VALUE["--flash-swap"]),
   };
 
   const REQUIRED_ARGS_LIST = keyValueArgsToList(REQUIRED_ARGS_KEY_VALUE);
