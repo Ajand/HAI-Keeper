@@ -1,12 +1,4 @@
-import arg, { Spec } from "arg";
-
-interface Arg {
-  key: string;
-  type: any;
-  required?: boolean;
-  default?: any;
-  help?: string;
-}
+import { Arg } from "../../../types/Initializer";
 
 export const ARGS_DEF: Arg[] = [
   {
@@ -200,42 +192,3 @@ export const ARGS_DEF: Arg[] = [
     help: "Use uniswap flash swaps to liquidate and settle auctions. No system coin or collateral is needed",
   },
 ];
-
-const prepareArgsList = (argsList: string[]) =>
-  argsList.reduce((pV: any, cV: any, i: number) => {
-    const lastValue = pV[pV.length - 1];
-    if (!lastValue) {
-      return [...pV, cV];
-    }
-    if (Array.isArray(lastValue)) {
-      if (!cV.startsWith("--")) {
-        return [...pV.slice(0, -1), [...lastValue, cV]];
-      } else {
-        return [...pV, cV];
-      }
-    } else if (!lastValue.startsWith("--") && !cV.startsWith("--")) {
-      return [...pV.slice(0, -1), [lastValue, cV]];
-    } else {
-      return [...pV, cV];
-    }
-  }, []);
-
-export const ArgsParser = (argsList: string[]) => {
-  const args = arg(
-    ARGS_DEF.reduce((pV: Spec, cV: Arg) => {
-      const list = { ...pV };
-      list[cV.key] = cV.type;
-      return list;
-    }, {}),
-    { permissive: true, argv: prepareArgsList(argsList) }
-  );
-
-  ARGS_DEF.forEach((arg) => {
-    if (arg.required && !args[arg.key])
-      throw new Error(`missing required argument: ${arg.key}`);
-    if (arg.default !== undefined && !args[arg.key])
-      args[arg.key] = arg.default;
-  });
-
-  return args;
-};

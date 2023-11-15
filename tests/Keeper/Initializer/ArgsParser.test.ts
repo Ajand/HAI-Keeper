@@ -1,4 +1,5 @@
-import { ArgsParser, ARGS_DEF } from "../../../src/Keeper/Initializer";
+import { ArgsParser } from "../../../src/Keeper/Initializer";
+import { ARGS_DEF } from "../../../src/Keeper/Initializer/ArgsParser/ArgsDef";
 
 interface KeyValue {
   [key: string]: string | boolean | Array<string>;

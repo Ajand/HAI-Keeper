@@ -37,7 +37,7 @@ The Keepers get develop in 4 phases.
     - [ ] Configure Auction Contracts
     - [ ] Setup Gas Strategy
     - [ ] Configure accounts for which we'll settle auctions
-    - [ ] Parsing Args
+    - [x] Parsing Args
     - [ ] Configure Provider and Signer
     - [ ] Configure Core Contracts
   - [ ] Main
