@@ -22,6 +22,7 @@
     "@typechain/hardhat": "^9.0.0",
     "@types/chai": "^4.2.0",
     "@types/jest": "^29.5.8",
+    "@types/keythereum": "^1.2.4",
     "@types/mocha": ">=9.1.0",
     "@types/node": ">=16.0.0",
     "chai": "^4.2.0",
@@ -38,6 +39,7 @@
   },
   "dependencies": {
     "@hai-on-op/sdk": "^1.2.1",
-    "arg": "^5.0.2"
+    "arg": "^5.0.2",
+    "keythereum": "^2.0.0"
   }
 }
