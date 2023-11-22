@@ -1,12 +1,8 @@
 import { ethers } from "ethers";
 import keythereum from "keythereum";
 import fs from "fs";
-import path from "path";
 
-interface KeyPass {
-  key_file: string;
-  pass_file: string;
-}
+import { KeyPass } from "../../types";
 
 export const KeyPassSplitter = (walletPath: string): KeyPass => {
   const keyValuePairs = walletPath.split(",");

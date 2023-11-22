@@ -5,3 +5,12 @@ export interface Arg {
   default?: any;
   help?: string;
 }
+
+export interface KeyPass {
+  key_file: string;
+  pass_file: string;
+}
+
+export interface KeyValue {
+  [key: string]: string | boolean | Array<string>;
+}
