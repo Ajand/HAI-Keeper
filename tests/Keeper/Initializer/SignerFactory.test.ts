@@ -4,6 +4,7 @@ import {
 } from "../../../src/Keeper/Initializer/SignerFactory";
 import path from "path";
 import { ethers } from "ethers";
+import { REQUIRED_ARGS_KEY_VALUE } from "../../contexts/args";
 
 describe("SignerFactory", () => {
   describe("KeyPassSplitter", () => {
@@ -36,10 +37,7 @@ describe("SignerFactory", () => {
 
   describe("SignerFactory", () => {
     it("Must get proper wallet", () => {
-      const walletPath = `key_file=${path.resolve(
-        __dirname,
-        "walletFiles/test-key.json"
-      )},pass_file=${path.resolve(__dirname, "walletFiles/test-pass.pass")}`;
+      const walletPath = REQUIRED_ARGS_KEY_VALUE["--eth-key"];
 
       const keyFile = KeyPassSplitter(walletPath);
 

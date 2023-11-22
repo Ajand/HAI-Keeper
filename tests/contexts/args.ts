@@ -1,11 +1,15 @@
 import "dotenv/config";
+import path from "path";
 
 const rpc_uri = process.env.RPC_URI;
 
 export const REQUIRED_ARGS_KEY_VALUE = {
   "--rpc-uri": rpc_uri ? rpc_uri : "www",
   "--eth-from": "0x1E762556B846e89935de26fEed4Cd62A5B851BBB",
-  "--eth-key": "key_file=aaa.json,pass_file=aaa.pass",
+  "--eth-key": `key_file=${path.resolve(
+    __dirname,
+    "walletFiles/test-key.json"
+  )},pass_file=${path.resolve(__dirname, "walletFiles/test-pass.pass")}`,
 };
 
 export const OPTIONAL_ARGS_KEY_VALUE = {
