@@ -52,11 +52,38 @@ export const gebUtils = (wallet: ethers.Wallet) => {
     await weth.approve(approveTo, amount);
   };
 
+  const openSafeAndGenerateDebt = async (
+    collateralAmount: string | number,
+    haiAmount: string | number
+  ) => {
+    const proxy = await getProxy();
+    await getWethAndApprove(collateralAmount, proxy.proxyAddress);
+
+    try {
+      const pop = await proxy.openLockTokenCollateralAndGenerateDebt(
+        "WETH",
+        collateralAmount,
+        haiAmount
+      );
+      const tx = await wallet.sendTransaction(pop);
+      const receipt = await tx.wait();
+      return receipt;
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const getUserHaiBalance = async () => {
+    return geb.contracts.systemCoin.balanceOf(wallet.address);
+  };
+
   return {
     geb,
     getWethOracle,
     getChainlinkRelayer,
     getProxy,
     getWethAndApprove,
+    openSafeAndGenerateDebt,
+    getUserHaiBalance,
   };
 };

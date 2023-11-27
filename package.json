@@ -40,8 +40,9 @@
     "typescript": ">=4.5.0"
   },
   "dependencies": {
-    "@hai-on-op/sdk": "^1.2.1",
+    "@hai-on-op/sdk": "1.2.1",
     "arg": "^5.0.2",
+    "axios": "^1.6.2",
     "dotenv": "^16.3.1",
     "keythereum": "^2.0.0"
   }
