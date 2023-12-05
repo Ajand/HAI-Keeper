@@ -23,7 +23,7 @@
     "@typechain/ethers-v5": "^10.1.0",
     "@typechain/hardhat": "^6.1.2",
     "@types/chai": "^4.2.0",
-    "@types/jest": "^29.5.8",
+    "@types/jest": "^29.5.11",
     "@types/keythereum": "^1.2.4",
     "@types/mocha": ">=9.1.0",
     "@types/node": ">=16.0.0",

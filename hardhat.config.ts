@@ -1,6 +1,5 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
-import "@chaos-labs/chainlink-hardhat-plugin";
 import "dotenv/config";
 
 const config: HardhatUserConfig = {

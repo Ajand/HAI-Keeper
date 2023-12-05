@@ -7,6 +7,6 @@
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["hardhat", "ethers"]
+    "types": ["hardhat", "ethers", "jest"]
   }
 }
