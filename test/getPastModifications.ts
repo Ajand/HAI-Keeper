@@ -9,7 +9,7 @@ import { getPastSafeModifications } from "../src/Keeper/EventHandlers";
 
 describe("Get Past Modifications Logs", () => {
   it("Should find a single log", async () => {
-    const { provider, geb, fixtureWallet } = await loadFixture(mintHai);
+    const { provider, geb } = await loadFixture(mintHai);
 
     const startingBlock = Number(process.env.FORK_BLOCK_NUMBER);
     const endBlock = (await provider.getBlock("latest")).number;
