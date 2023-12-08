@@ -11,8 +11,6 @@ describe("Collateral class", () => {
   it("Should get a single collateral", async () => {
     const { geb, provider } = await loadFixture(basicCollateralFixture);
 
-    const wethByteString = geb.tokenList.WETH.bytes32String;
-
     const wethCollateral = new Collateral(
       { provider, geb },
       geb.tokenList.WETH

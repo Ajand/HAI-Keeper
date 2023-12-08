@@ -39,5 +39,7 @@ describe("Safe class", () => {
 
     expect(safe.lockedCollateral).to.not.be.undefined;
     expect(safe.generatedDebt).to.not.be.undefined;
+
+    console.log(safe.getNormalizedInfo());
   });
 });

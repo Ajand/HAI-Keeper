@@ -41,6 +41,14 @@ export class Safe {
     }
   }
 
+  async updateInfo() {
+    try {
+      await this.getSafeInfo();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   async getSafeInfo() {
     try {
       await this.getSafeParams();
@@ -56,5 +64,22 @@ export class Safe {
     );
     this.lockedCollateral = safeParams.lockedCollateral;
     this.generatedDebt = safeParams.generatedDebt;
+  }
+
+  getNormalizedInfo() {
+    if (this.generatedDebt && this.lockedCollateral) {
+      const lockedCollateral = ethers.utils.formatUnits(
+        this.lockedCollateral,
+        18
+      );
+      const generatedDebt = ethers.utils.formatUnits(this.generatedDebt, 18);
+
+      return {
+        lockedCollateral,
+        generatedDebt,
+      };
+    } else {
+      throw new Error("not initialized yet.");
+    }
   }
 }

@@ -44,6 +44,14 @@ export class Collateral {
     }
   }
 
+  async updateInfo() {
+    try {
+      await this.getCollateralInfo();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   async getCollateralInfo() {
     try {
       await this.getCollateralParams();
@@ -59,12 +67,6 @@ export class Collateral {
     );
     this.debtCeiling = collateralParams.debtCeiling;
     this.debtFloor = collateralParams.debtFloor;
-
-    //console.log(
-    //  "Debt Ceiling: ",
-    //  ethers.utils.formatUnits(this.debtCeiling, 45)
-    //);
-    //console.log("Debt Floor", ethers.utils.formatUnits(this.debtFloor, 45));
   }
 
   async getCollateralData() {
@@ -91,7 +93,7 @@ export class Collateral {
     ) {
       return {
         debtCeiling: ethers.utils.formatUnits(this.debtCeiling, 45),
-        debtFloor: ethers.utils.formatUnits(this.debtCeiling, 45),
+        debtFloor: ethers.utils.formatUnits(this.debtFloor, 45),
         debtAmount: ethers.utils.formatUnits(this.debtAmount, 18),
         lockedAmount: ethers.utils.formatUnits(this.lockedAmount, 18),
         accumulatedRate: ethers.utils.formatUnits(this.accumulatedRate, 27),
