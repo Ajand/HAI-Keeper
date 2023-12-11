@@ -63,8 +63,6 @@ export const getPastSafeModifications =
         `Found ${logs.length} total logs from block ${start} to ${end}`
       );
 
-      geb.contracts.safeEngine.on;
-
       logs.forEach((log) => {
         const logHash = ethers.utils.keccak256(
           ethers.utils.toUtf8Bytes(JSON.stringify(log))

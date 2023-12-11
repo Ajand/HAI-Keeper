@@ -82,4 +82,57 @@ export class Safe {
       throw new Error("not initialized yet.");
     }
   }
+
+  getCriticalAssesmentParams() {
+    const accumulatedRate = this.collateral.accumulatedRate;
+    const liquidationPrice = this.collateral.liquidationPrice;
+
+    if (!accumulatedRate || !liquidationPrice) {
+      throw new Error("Collateral is not initialized.");
+    }
+
+    if (!this.generatedDebt || !this.lockedCollateral) {
+      throw new Error("Safe is not initialized!");
+    }
+
+    return {
+      accumulatedRate,
+      liquidationPrice,
+      generatedDebt: this.generatedDebt,
+      lockedCollateral: this.lockedCollateral,
+    };
+  }
+
+  getCriticalityRatio() {
+    const {
+      accumulatedRate,
+      liquidationPrice,
+      generatedDebt,
+      lockedCollateral,
+    } = this.getCriticalAssesmentParams();
+
+    const ratio =
+      Number(
+        ethers.utils.formatUnits(lockedCollateral.mul(liquidationPrice), 45)
+      ) /
+      Number(ethers.utils.formatUnits(generatedDebt.mul(accumulatedRate), 45));
+
+    // Ratio less than 1 means the safe is critical
+    return ratio;
+  }
+
+  isCritical() {
+    const {
+      accumulatedRate,
+      liquidationPrice,
+      generatedDebt,
+      lockedCollateral,
+    } = this.getCriticalAssesmentParams();
+
+    const isCrit =
+      lockedCollateral.mul(liquidationPrice) <
+      generatedDebt.mul(accumulatedRate);
+
+    return isCrit;
+  }
 }

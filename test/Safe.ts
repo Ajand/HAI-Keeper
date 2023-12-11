@@ -9,8 +9,8 @@ import { Collateral, Safe } from "../src/lib";
 import { getPastSafeModifications } from "../src/Keeper/EventHandlers";
 
 describe("Safe class", () => {
-  it("Should have proper safe data after initialization", async () => {
-    const { geb, provider } = await loadFixture(mintHai);
+  const basicFixture = async () => {
+    const { geb, provider } = await mintHai();
 
     const startingBlock = Number(process.env.FORK_BLOCK_NUMBER);
     const endBlock = (await provider.getBlock("latest")).number;
@@ -37,9 +37,26 @@ describe("Safe class", () => {
 
     await safe.init();
 
+    return {
+      geb,
+      provider,
+      wethCollateral,
+      safe,
+    };
+  };
+
+  it("Should have proper safe data after initialization", async () => {
+    const { safe } = await loadFixture(basicFixture);
     expect(safe.lockedCollateral).to.not.be.undefined;
     expect(safe.generatedDebt).to.not.be.undefined;
+  });
 
-    console.log(safe.getNormalizedInfo());
+  describe("Is critical", () => {
+    it("A new created safe should not be critical", async () => {
+      const { safe } = await loadFixture(basicFixture);
+
+      expect(safe.getCriticalityRatio()).to.be.greaterThan(1);
+      expect(safe.isCritical()).to.be.false;
+    });
   });
 });
