@@ -12,11 +12,12 @@ export async function mintHai() {
   resetNetwork();
   const fixtureWallet = await createFixtureWallet(provider);
 
-  const { openSafeAndGenerateDebt, geb, getUserHaiBalance } =
-    gebUtils(fixtureWallet);
+  const gebUtilsResult = gebUtils(fixtureWallet);
+
+  const { openSafeAndGenerateDebt, geb, getUserHaiBalance } = gebUtilsResult;
 
   const collateralAmount = ethers.utils.parseEther("5").toHexString();
-  const haiAmount = ethers.utils.parseEther("5000").toHexString();
+  const haiAmount = ethers.utils.parseEther("7445").toHexString();
 
   await openSafeAndGenerateDebt(collateralAmount, haiAmount);
 
@@ -25,7 +26,7 @@ export async function mintHai() {
     ethers.utils.formatEther(await getUserHaiBalance())
   );
 
-  return { provider, fixtureWallet, geb };
+  return { ...gebUtilsResult, provider, fixtureWallet, geb };
 }
 
 export async function generateTwentySafe() {
