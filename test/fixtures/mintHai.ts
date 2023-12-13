@@ -9,7 +9,7 @@ import { ethers } from "ethers";
 
 export async function mintHai() {
   const provider = getProvider();
-  resetNetwork();
+  await resetNetwork();
   const fixtureWallet = await createFixtureWallet(provider);
 
   const gebUtilsResult = gebUtils(fixtureWallet);
