@@ -135,4 +135,12 @@ export class Safe {
 
     return isCrit;
   }
+
+  canLiquidate() {
+    // In the RAI system there was a check for liqudation that was about on auctioned system coin limit
+    // In HAI code base that check is removed so it does not make sense to check it in the keeper as well
+    // Also we have to add debt limits later to this
+    // For now it just check if the safe is critical or not
+    return this.isCritical();
+  }
 }
