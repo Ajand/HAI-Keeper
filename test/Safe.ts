@@ -31,7 +31,7 @@ describe("Safe class", () => {
       startingBlock,
       endBlock,
       "",
-      1
+      50
     );
 
     const safe = new Safe(
@@ -93,6 +93,31 @@ describe("Safe class", () => {
 
       expect(safe.getCriticalityRatio()).to.be.greaterThan(1);
       expect(safe.isCritical()).to.be.false;
+    });
+  });
+
+  describe("Liquidate safe", () => {
+    it("Created safe should be critical after decreasing the price of collateral", async () => {
+      const { safe, provider, wethCollateral, geb, fixtureWallet } =
+        await basicFixture();
+
+      await changeCollateralPrice(150000000000, 105000000000, wethCollateral)(
+        hre,
+        provider,
+        fixtureWallet,
+        geb
+      );
+
+      expect(safe.isCritical()).to.be.true;
+
+      const receipt = await safe.liquidate();
+
+      const liquidateEvent = receipt?.events?.find(
+        (ev) => ev.event === "Liquidate"
+      );
+
+      expect(liquidateEvent).to.not.be.undefined;
+      expect(liquidateEvent?.args?._safe).to.be.equal(safe.address);
     });
   });
 });
