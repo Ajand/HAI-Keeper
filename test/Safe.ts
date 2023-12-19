@@ -9,7 +9,6 @@ import { changeCollateralPrice, resetNetwork } from "./utils";
 
 import { Collateral, Safe } from "../src/lib";
 import { getPastSafeModifications } from "../src/Keeper/EventHandlers";
-import { ethers } from "ethers";
 
 describe("Safe class", () => {
   const basicFixture = async () => {
