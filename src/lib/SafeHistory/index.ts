@@ -50,12 +50,9 @@ export class SafeHistory {
       safeAddresses.add(safeAddress);
 
       if (this.safes.has(safeAddress)) {
-        console.log(" or here???", safeAddress);
-
         const safe = this.safes.get(safeAddress);
         await safe?.updateInfo();
       } else {
-        console.log(" we are here???", safeAddress);
         const safe = new Safe(
           {
             geb: this.geb,

@@ -36,7 +36,9 @@ export const gebUtils = (wallet: ethers.Wallet) => {
       const proxy = await geb.getProxyAction(wallet.address);
       return proxy;
     } catch (err) {
-      const tx = await geb.deployProxy();
+      const tx = await geb.contracts.proxyFactory["build(address)"](
+        wallet.address
+      );
       await tx.wait();
       const proxy = await geb.getProxyAction(wallet.address);
       return proxy;
@@ -65,9 +67,33 @@ export const gebUtils = (wallet: ethers.Wallet) => {
         collateralAmount,
         haiAmount
       );
-      const tx = await wallet.sendTransaction(pop);
+      const tx = await wallet.sendTransaction({ ...pop });
       const receipt = await tx.wait();
-      return receipt;
+
+      let iface = new ethers.utils.Interface([
+        `
+        event ModifySAFECollateralization(
+            bytes32 indexed _cType,
+            address indexed _safe,
+            address _collateralSource,
+            address _debtDestination,
+            int256 _deltaCollateral,
+            int256 _deltaDebt
+        );
+        `,
+      ]);
+
+      let safeAddress;
+
+      receipt.logs.forEach((log) => {
+        try {
+          const findedLog = iface.parseLog(log);
+          safeAddress = findedLog.args._safe;
+        } catch (err) {
+          //console.error(err);
+        }
+      });
+      return safeAddress;
     } catch (err) {
       console.error(err);
     }

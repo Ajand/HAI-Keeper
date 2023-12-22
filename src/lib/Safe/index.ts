@@ -214,12 +214,12 @@ export class Safe {
       return receipt;
     } catch (err) {
       // @ts-ignore
-      console.log(err);
+      console.error(err);
       // @ts-ignore
-      const revertData = "0x1baf9c1c";
-      console.log("revert data is: ", revertData);
-      const decodedError = liquidationEngine.interface.parseError(revertData);
-      console.log(`Transaction failed: ${decodedError.name}`);
+      //const revertData = "0x1baf9c1c";
+      //console.log("revert data is: ", revertData);
+      //const decodedError = liquidationEngine.interface.parseError(revertData);
+      //console.log(`Transaction failed: ${decodedError.name}`);
     }
   }
 }
