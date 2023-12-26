@@ -4,7 +4,7 @@ import { Geb, utils } from "@hai-on-op/sdk";
 import { KeyPassSplitter, createWallet } from "./Initializer/SignerFactory";
 import { getPastSafeModifications } from "./EventHandlers";
 
-import { Collateral, SafeHistory } from "../lib";
+import { Collateral, SafeHistory, CollateralAuctionHouse } from "../lib";
 
 interface KeeperOverrides {
   provider?: ethers.providers.JsonRpcProvider;
@@ -18,6 +18,8 @@ export class Keeper {
   geb: Geb;
   collateral: Collateral;
   safeHistory: SafeHistory;
+
+  collateralAuctionHouse: CollateralAuctionHouse;
 
   liquidatedSafes: Set<string> = new Set();
 
@@ -49,12 +51,18 @@ export class Keeper {
       this.collateral.init();
     }
 
-    console.log(Number(this.args["--from-block"]));
-
     this.safeHistory = new SafeHistory(
       { provider: this.provider, geb: this.geb },
       this.collateral,
       Number(this.args["--from-block"])
+    );
+
+    this.collateralAuctionHouse = new CollateralAuctionHouse(
+      {
+        provider: this.provider,
+        geb: this.geb,
+      },
+      this.collateral
     );
 
     this.handleLifeCycle();
