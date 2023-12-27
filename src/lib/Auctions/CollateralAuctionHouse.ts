@@ -4,6 +4,8 @@ import { ICollateralAuctionHouse } from "@hai-on-op/sdk/lib/typechained/ICollate
 
 import { Collateral } from "../Collateral";
 
+import { CollateralAuction } from "./CollateralAuction";
+
 interface CollateralAuctionHouseInfrastructure {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
@@ -17,6 +19,8 @@ export class CollateralAuctionHouse {
   loaded: boolean = false;
 
   contract: ICollateralAuctionHouse;
+
+  auctions: Array<CollateralAuction> = [];
 
   constructor(
     { provider, geb }: CollateralAuctionHouseInfrastructure,
@@ -36,14 +40,27 @@ export class CollateralAuctionHouse {
 
   async loadState() {
     console.log("loading state ...");
+    await this.handleAuctionsState();
   }
 
   async reloadState() {
     console.log("reloading state ...");
-
-    console.log(this.collateral.tokenData.symbol, this.contract.address);
-    console.log(await this.contract.auctionsStarted());
+    await this.handleAuctionsState();
   }
 
-  async getAuctionsStarted() {}
+  async handleAuctionsState() {
+    const auctionsStarted = await this.contract.auctionsStarted();
+    if (auctionsStarted.toNumber() !== this.auctions.length) {
+      const notFollowedActionsIds = Array(
+        auctionsStarted.toNumber() - this.auctions.length
+      )
+        .fill(0)
+        .map((v, i) => {
+          return ethers.BigNumber.from(this.auctions.length + i + 1);
+        });
+      notFollowedActionsIds.forEach((auctionId) => {
+        this.auctions.push(new CollateralAuction(auctionId, this.contract));
+      });
+    }
+  }
 }

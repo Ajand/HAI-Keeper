@@ -62,5 +62,6 @@ describe("Auction House Tests", () => {
     await sleep(5000);
 
     await auctionHouse.reloadState();
+    expect(auctionHouse.auctions[0].id).to.be.equal(1);
   });
 });
