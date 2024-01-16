@@ -4,6 +4,7 @@ import { Geb, utils } from "@hai-on-op/sdk";
 import { KeyPassSplitter, createWallet } from "./Initializer/SignerFactory";
 import { getPastSafeModifications } from "./EventHandlers";
 import { NonceManager } from "@ethersproject/experimental";
+import * as types from "@hai-on-op/sdk/lib/typechained";
 
 import { Collateral, SafeHistory, CollateralAuctionHouse } from "../lib";
 
@@ -33,6 +34,7 @@ export class Keeper {
   liquidatedSafes: Set<string> = new Set();
 
   coinBalance: ethers.BigNumber = ethers.BigNumber.from(0);
+  collateralBalance: ethers.BigNumber = ethers.BigNumber.from(0);
 
   isBidding: boolean;
 
@@ -110,8 +112,13 @@ export class Keeper {
 
   async startup() {
     await this.approveSystemCoinForJoinCoin();
-    await this.joinTheCoins();
+    await this.joinSystemCoins();
     await this.getSystemCoinBalance();
+    await this.getCollateralBalance();
+  }
+
+  async shutdown() {
+    await this.exitCollateral();
   }
 
   async approveSystemCoinForJoinCoin() {
@@ -127,8 +134,8 @@ export class Keeper {
     console.info("Approved keeper's system coins to be used by coin join.");
   }
 
-  async joinTheCoins() {
-    console.info("Joining the coinst to the coin join.");
+  async joinSystemCoins() {
+    console.info("Joining the coins to the coin join.");
     const joinCoin = this.geb.contracts.joinCoin;
     const systemCoin = this.geb.contracts.systemCoin;
     const keeperBalance = await systemCoin.balanceOf(this.signer.address);
@@ -150,9 +157,39 @@ export class Keeper {
     console.info(`Joined ${keeperBalance} system coin.`);
   }
 
+  async exitCollateral() {
+    console.info("Exiting the collateral from the coin join.");
+    const collateralJoin = types.ICollateralJoin__factory.connect(
+      this.collateral.tokenData.collateralJoin,
+      this.signer
+    );
+    await this.getCollateralBalance();
+    await collateralJoin.exit(this.signer.address, this.collateralBalance);
+    console.info(
+      `Exited ${this.collateralBalance} collaterals from the collateral join.`
+    );
+    await this.getCollateralBalance();
+  }
+
+  async exitSystemCoin() {
+    console.info("Exiting the coins to the coin join.");
+  }
+
   async getSystemCoinBalance() {
     this.coinBalance = await this.geb.contracts.safeEngine.coinBalance(
       this.signer.address
+    );
+  }
+
+  async getCollateralBalance() {
+    console.info("Getting collateral balance");
+    this.collateralBalance =
+      await this.geb.contracts.safeEngine.tokenCollateral(
+        this.collateral.tokenData.bytes32String,
+        this.signer.address
+      );
+    console.info(
+      `Keeper collateral balance updated, ${this.collateralBalance}`
     );
   }
 
