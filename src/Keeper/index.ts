@@ -119,6 +119,7 @@ export class Keeper {
 
   async shutdown() {
     await this.exitCollateral();
+    await this.exitSystemCoin();
   }
 
   async approveSystemCoinForJoinCoin() {
@@ -172,7 +173,44 @@ export class Keeper {
   }
 
   async exitSystemCoin() {
-    console.info("Exiting the coins to the coin join.");
+    console.info("Exiting the system coins from the coin join.");
+    const joinCoin = this.geb.contracts.joinCoin;
+    await this.handleSafeApprovalForExit();
+    await this.getSystemCoinBalance();
+    const tx = await joinCoin.exit(
+      this.signer.address,
+      WadFromRad(this.coinBalance)
+    );
+    await tx.wait();
+    console.info(
+      `Exited ${this.collateralBalance} system coin from the coin join.`
+    );
+    await this.getSystemCoinBalance();
+  }
+
+  async handleSafeApprovalForExit() {
+    const joinCoin = this.geb.contracts.joinCoin;
+
+    const isCollateralApprovedForAddress =
+      await this.geb.contracts.safeEngine.safeRights(
+        String(this.signer.address),
+        joinCoin.address
+      );
+
+    if (!isCollateralApprovedForAddress) {
+      console.info(
+        "Approving keeper's address to be able exit system by coin join."
+      );
+      const tx = await this.geb.contracts.safeEngine.approveSAFEModification(
+        joinCoin.address
+      );
+      await tx.wait();
+      console.info("Keeper's address approved to be used by coin join.");
+    } else {
+      console.info(
+        "Keeper's address is already approved to be used by coin join."
+      );
+    }
   }
 
   async getSystemCoinBalance() {
