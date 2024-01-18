@@ -33,10 +33,12 @@ export class Keeper {
 
   liquidatedSafes: Set<string> = new Set();
 
-  coinBalance: ethers.BigNumber = ethers.BigNumber.from(0);
-  collateralBalance: ethers.BigNumber = ethers.BigNumber.from(0);
+  coinBalance: ethers.BigNumber = ethers.BigNumber.from(0); // RAD
+  collateralBalance: ethers.BigNumber = ethers.BigNumber.from(0); // WAD
 
   isBidding: boolean;
+  keepSystemCoinInSafeEngine: boolean;
+  keepCollateralInSafeEngine: boolean;
 
   constructor(argsList: string[], overrides: KeeperOverrides = {}) {
     this.args = ArgsParser(argsList);
@@ -80,7 +82,18 @@ export class Keeper {
       this.collateral
     );
 
+    // Setting up the keeper setup props
     this.isBidding = this.args["--start-auctions-only"] ? false : true;
+    this.keepSystemCoinInSafeEngine = this.args[
+      "--keep-system-coin-in-safe-engine-on-exit"
+    ]
+      ? true
+      : false;
+    this.keepCollateralInSafeEngine = this.args[
+      "--keep-collateral-in-safe-engine-on-exit"
+    ]
+      ? true
+      : false;
 
     this.handleLifeCycle();
   }
@@ -118,8 +131,19 @@ export class Keeper {
   }
 
   async shutdown() {
-    await this.exitCollateral();
-    await this.exitSystemCoin();
+    console.info("Shutting down the keeper");
+    if (!this.keepCollateralInSafeEngine) {
+      console.info("Keeper is set up to exit collateral on shutdown");
+      await this.exitCollateral();
+    } else {
+      console.info("Keeper is set up to NOT exit collateral on shutdown.");
+    }
+    if (!this.keepSystemCoinInSafeEngine) {
+      console.info("Keeper is set up to exit system coin on shutdown");
+      await this.exitSystemCoin();
+    } else {
+      console.info("Keeper is set up to NOT exit system coin on shutdown.");
+    }
   }
 
   async approveSystemCoinForJoinCoin() {
