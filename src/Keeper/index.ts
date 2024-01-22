@@ -111,6 +111,9 @@ export class Keeper {
         isProcessing = true;
         try {
           this.checkSafes(currentBlockNumber);
+          if (this.collateralAuctionHouse.loaded) {
+            await this.collateralAuctionHouse.reloadState();
+          }
         } catch (err) {
           console.error(err);
         }
@@ -125,6 +128,7 @@ export class Keeper {
 
   async startup() {
     await this.approveSystemCoinForJoinCoin();
+    await this.collateralAuctionHouse.loadState();
     await this.joinSystemCoins();
     await this.getSystemCoinBalance();
     await this.getCollateralBalance();
@@ -150,7 +154,7 @@ export class Keeper {
     console.info("Approving system coin to be used by coin join.");
     const joinCoin = this.geb.contracts.joinCoin;
     const systemCoin = this.geb.contracts.systemCoin;
-    // TODO: add the
+    // TODO: add the check for not approving if it's already approved.
     const tx = await systemCoin.approve(
       joinCoin.address,
       ethers.constants.MaxUint256

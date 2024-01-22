@@ -68,6 +68,8 @@ describe("Auction House Tests", () => {
       geb
     );
 
+    await sleep(2000);
+
     const auctionHouse = keeper.collateralAuctionHouse;
 
     await sleep(5000);

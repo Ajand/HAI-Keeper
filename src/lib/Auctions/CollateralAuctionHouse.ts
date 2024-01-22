@@ -34,8 +34,6 @@ export class CollateralAuctionHouse {
       this.geb.contracts.tokenCollateralAuctionHouse[
         this.collateral.tokenData.symbol
       ];
-
-    this.loadState();
   }
 
   async loadState() {

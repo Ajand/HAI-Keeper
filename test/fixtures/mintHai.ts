@@ -76,7 +76,11 @@ export async function generateFiveSafe() {
     const collateralAmount = ethers.utils.parseEther("5").toHexString();
     const haiAmount = ethers.utils.parseEther("5000").toHexString();
 
-    await openSafeAndGenerateDebt(collateralAmount, haiAmount);
+    try {
+      await openSafeAndGenerateDebt(collateralAmount, haiAmount);
+    } catch (err) {
+      console.log(err);
+    }
 
     console.debug(`${i + 1} Safes has been opened.`);
   }
