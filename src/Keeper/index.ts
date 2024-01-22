@@ -151,16 +151,27 @@ export class Keeper {
   }
 
   async approveSystemCoinForJoinCoin() {
-    console.info("Approving system coin to be used by coin join.");
     const joinCoin = this.geb.contracts.joinCoin;
     const systemCoin = this.geb.contracts.systemCoin;
     // TODO: add the check for not approving if it's already approved.
-    const tx = await systemCoin.approve(
-      joinCoin.address,
-      ethers.constants.MaxUint256
+
+    const currentAllowance = await systemCoin.allowance(
+      this.signer.address,
+      joinCoin.address
     );
-    await tx.wait();
-    console.info("Approved keeper's system coins to be used by coin join.");
+    if (currentAllowance.eq(0)) {
+      console.info("Approving system coin to be used by coin join.");
+      const tx = await systemCoin.approve(
+        joinCoin.address,
+        ethers.constants.MaxUint256
+      );
+      await tx.wait();
+      console.info("Approved keeper's system coins to be used by coin join.");
+    } else {
+      console.info(
+        "Skipping the approval for system coin to be used by coin join, because it is already approved."
+      );
+    }
   }
 
   async joinSystemCoins() {

@@ -95,7 +95,7 @@ export const gebUtils = (wallet: ethers.Wallet) => {
       });
       return safeAddress;
     } catch (err) {
-      console.error(err);
+      throw new Error(err);
     }
   };
 
