@@ -33,6 +33,8 @@ export class Keeper {
 
   liquidatedSafes: Set<string> = new Set();
 
+  startupFinished: boolean = false;
+
   coinBalance: ethers.BigNumber = ethers.BigNumber.from(0); // RAD
   collateralBalance: ethers.BigNumber = ethers.BigNumber.from(0); // WAD
 
@@ -106,22 +108,25 @@ export class Keeper {
     let processedBlock: number;
     let isProcessing = false;
     this.provider.on("block", async () => {
-      const currentBlockNumber = await this.provider.getBlockNumber();
-      if (processedBlock !== currentBlockNumber && !isProcessing) {
-        isProcessing = true;
-        try {
-          this.checkSafes(currentBlockNumber);
-          if (this.collateralAuctionHouse.loaded) {
-            await this.collateralAuctionHouse.reloadState();
+      console.log("is Startup finished : -=======", this.startupFinished);
+      if (this.startupFinished) {
+        const currentBlockNumber = await this.provider.getBlockNumber();
+        if (processedBlock !== currentBlockNumber && !isProcessing) {
+          isProcessing = true;
+          try {
+            this.checkSafes();
+            if (this.collateralAuctionHouse.loaded) {
+              await this.collateralAuctionHouse.reloadState();
+            }
+          } catch (err) {
+            console.error(err);
           }
-        } catch (err) {
-          console.error(err);
+
+          processedBlock = await this.provider.getBlockNumber();
+          isProcessing = false;
+
+          this.handleBidding();
         }
-
-        processedBlock = await this.provider.getBlockNumber();
-        isProcessing = false;
-
-        this.handleBidding();
       }
     });
   }
@@ -132,6 +137,14 @@ export class Keeper {
     await this.joinSystemCoins();
     await this.getSystemCoinBalance();
     await this.getCollateralBalance();
+
+    console.info("Initating the fetching initial events of the keeper");
+
+    await this.checkSafes();
+
+    this.startupFinished = true;
+
+    console.info("Initial safe data fetched.");
   }
 
   async shutdown() {
@@ -270,7 +283,7 @@ export class Keeper {
     );
   }
 
-  async checkSafes(currentBlockNumber: number) {
+  async checkSafes() {
     if (this.collateral.initialized) {
       await this.collateral.updateInfo();
     } else {
@@ -303,15 +316,16 @@ export class Keeper {
     }
   }
 
-  async getSafes() {
-    const startingBlock = 17538859;
-    const endBlock = (await this.provider.getBlock("latest")).number;
-
-    return getPastSafeModifications({
-      geb: this.geb,
-      provider: this.provider,
-    })(startingBlock, endBlock, "");
-  }
+  // TODO: This should be removed
+  //async getSafes() {
+  //  const startingBlock = Number(this.args["--from-block"]);
+  //  const endBlock = (await this.provider.getBlock("latest")).number;
+  //
+  //  return getPastSafeModifications({
+  //    geb: this.geb,
+  //    provider: this.provider,
+  //  })(startingBlock, endBlock, "");
+  //}
 
   async handleBidding() {
     if (this.isBidding) {
