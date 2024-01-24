@@ -52,9 +52,14 @@ export class Keeper {
     const keyFile = KeyPassSplitter(String(this.args["--eth-key"]));
     const wallet = createWallet(keyFile).connect(this.provider);
 
+    console.info(`Keeper will interact as this address: ${wallet}`);
+
     this.signer = wallet.connect(this.provider);
 
-    this.geb = new Geb("optimism-goerli", this.signer);
+    const network = this.args["--network"];
+    // @ts-ignore
+    this.geb = new Geb(network, this.signer);
+    console.info(`Geb initiated on the ${network} network`);
 
     if (!this.args["--collateral"]) {
       this.collateral = new Collateral(
