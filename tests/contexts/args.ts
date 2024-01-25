@@ -16,7 +16,7 @@ export const OPTIONAL_ARGS_KEY_VALUE = {
   "--rpc-timeout": "30",
   "--type": "surplus",
   "--system": "open-dollar",
-  "--colatteral-type": "ETH-B",
+  "--collateral-type": "ETH-B",
   "--bid-only": true,
   "--start-auctions-only": true,
   "--settle-auctions-for": [

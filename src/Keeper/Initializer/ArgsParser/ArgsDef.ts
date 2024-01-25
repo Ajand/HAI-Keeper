@@ -2,6 +2,12 @@ import { Arg } from "../../../types/Initializer";
 
 export const ARGS_DEF: Arg[] = [
   {
+    key: "--network",
+    type: String,
+    default: "mainnet",
+    help: "The network which we gonna look for contracts on sdk.",
+  },
+  {
     key: "--rpc-uri",
     type: String,
     required: true,
@@ -38,15 +44,9 @@ export const ARGS_DEF: Arg[] = [
     help: "Name of the system. E.g hai, open-dollar",
   },
   {
-    key: "--system",
+    key: "--collateral-type",
     type: String,
-    default: "hai",
-    help: "Name of the system. E.g hai, open-dollar",
-  },
-  {
-    key: "--colatteral-type",
-    type: String,
-    default: "ETH-A",
+    default: "WETH",
     help: "Name of the collateral type for a collateral keeper",
   },
   {

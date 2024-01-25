@@ -37,8 +37,10 @@ export class Collateral {
 
   async init() {
     try {
+      console.info(`Collateral ${this.tokenData.symbol} is initializing.`);
       await this.getCollateralInfo();
       this.initialized = true;
+      console.info(`Collateral ${this.tokenData.symbol} got initialized.`);
     } catch (err) {
       console.error(err);
     }
@@ -46,7 +48,9 @@ export class Collateral {
 
   async updateInfo() {
     try {
+      console.info(`Updating ${this.tokenData.symbol} collateral.`);
       await this.getCollateralInfo();
+      console.info(`Collateral ${this.tokenData.symbol} got updated.`);
     } catch (err) {
       console.error(err);
     }

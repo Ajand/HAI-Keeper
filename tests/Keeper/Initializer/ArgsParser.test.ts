@@ -28,7 +28,7 @@ const createTestContext = () => {
     "--eth-from": String(ALL_ARGS_KEY_VALUE["--eth-from"]),
     "--eth-key": String(ALL_ARGS_KEY_VALUE["--eth-key"]),
     "--system": String(ALL_ARGS_KEY_VALUE["--system"]),
-    "--colatteral-type": String(ALL_ARGS_KEY_VALUE["--colatteral-type"]),
+    "--collateral-type": String(ALL_ARGS_KEY_VALUE["--collateral-type"]),
     "--bid-only": Boolean(ALL_ARGS_KEY_VALUE["--bid-only"]),
     "--start-auctions-only": Boolean(
       ALL_ARGS_KEY_VALUE["--start-auctions-only"]

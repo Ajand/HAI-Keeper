@@ -61,7 +61,7 @@ export class Keeper {
     this.geb = new Geb(network, this.signer);
     console.info(`Geb initiated on the ${network} network`);
 
-    if (!this.args["--collateral"]) {
+    if (!this.args["--collateral-type"]) {
       this.collateral = new Collateral(
         { provider: this.provider, geb: this.geb },
         this.geb.tokenList.WETH
@@ -70,7 +70,7 @@ export class Keeper {
     } else {
       this.collateral = new Collateral(
         { provider: this.provider, geb: this.geb },
-        this.geb.tokenList[this.args["--collateral"]]
+        this.geb.tokenList[this.args["--collateral-type"]]
       );
       this.collateral.init();
     }
