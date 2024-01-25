@@ -6,6 +6,8 @@ import { getPastSafeModifications } from "./EventHandlers";
 import { NonceManager } from "@ethersproject/experimental";
 import * as types from "@hai-on-op/sdk/lib/typechained";
 
+import { NativeBalance } from "../lib";
+
 import { Collateral, SafeHistory, CollateralAuctionHouse } from "../lib";
 
 import { WadFromRad } from "../lib/Math";
@@ -21,6 +23,13 @@ export const sleep = async (timeout: number) => {
   });
 };
 
+export enum KeeperStatus {
+  Initating,
+  Paused,
+  Working,
+  Stopped,
+}
+
 export class Keeper {
   args;
   provider: ethers.providers.JsonRpcProvider;
@@ -34,6 +43,8 @@ export class Keeper {
   liquidatedSafes: Set<string> = new Set();
 
   startupFinished: boolean = false;
+
+  nativeBalance: NativeBalance;
 
   coinBalance: ethers.BigNumber = ethers.BigNumber.from(0); // RAD
   collateralBalance: ethers.BigNumber = ethers.BigNumber.from(0); // WAD
@@ -51,6 +62,8 @@ export class Keeper {
 
     const keyFile = KeyPassSplitter(String(this.args["--eth-key"]));
     const wallet = createWallet(keyFile).connect(this.provider);
+
+    this.nativeBalance = new NativeBalance(this.provider, wallet, 5000);
 
     console.info(`Keeper will interact as this address: ${wallet.address}`);
 
