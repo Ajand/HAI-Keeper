@@ -1,6 +1,8 @@
 import { ethers } from "ethers";
 import { Geb } from "@hai-on-op/sdk";
 
+import { Collateral } from "../../lib";
+
 interface EventFetchingInfra {
   geb: Geb;
   provider: ethers.providers.JsonRpcProvider;
@@ -48,11 +50,10 @@ export const getPastSafeModifications =
   async (
     from: number,
     to: number,
-    collateral: string,
+    collateral: Collateral,
     chunk: number = 2000
   ) => {
     // TODO: Add presistent caching for logs
-
     console.debug(
       `Consumer requested safe modification data from block ${from} to ${to}`
     );
@@ -83,9 +84,9 @@ export const getPastSafeModifications =
 
       // Fetch logs from the specified range
       const logs = await provider.getLogs({
-        ...geb.contracts.safeEngine.filters[
-          "ModifySAFECollateralization(bytes32,address,address,address,int256,int256)"
-        ](),
+        ...geb.contracts.safeEngine.filters.ModifySAFECollateralization(
+          collateral.tokenData.bytes32String
+        ),
         fromBlock: start,
         toBlock: end,
       });

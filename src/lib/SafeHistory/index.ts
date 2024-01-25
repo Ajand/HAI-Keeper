@@ -29,10 +29,10 @@ export class SafeHistory {
     this.geb = geb;
     this.collateral = collateral;
     this.cacheBlock = from;
+    console.info("Safe history instance created.");
   }
 
   async getSafes() {
-    const start = new Date();
     const safeAddresses = new Set();
     let mods = [];
 
@@ -42,7 +42,7 @@ export class SafeHistory {
     mods = await getPastSafeModifications({
       geb: this.geb,
       provider: this.provider,
-    })(fromBlock, toBlock, "", 50);
+    })(fromBlock, toBlock, this.collateral, 2000);
 
     for (const mod of mods) {
       const safeAddress = mod.args._safe;

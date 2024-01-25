@@ -52,13 +52,17 @@ export class Keeper {
     const keyFile = KeyPassSplitter(String(this.args["--eth-key"]));
     const wallet = createWallet(keyFile).connect(this.provider);
 
-    console.info(`Keeper will interact as this address: ${wallet}`);
+    console.info(`Keeper will interact as this address: ${wallet.address}`);
 
     this.signer = wallet.connect(this.provider);
 
+    const testingNetwork = "optimism-goerli";
     const network = this.args["--network"];
-    // @ts-ignore
-    this.geb = new Geb(network, this.signer);
+    if (network) {
+      this.geb = new Geb(network, this.signer);
+    } else {
+      this.geb = new Geb(testingNetwork, this.signer);
+    }
     console.info(`Geb initiated on the ${network} network`);
 
     if (!this.args["--collateral-type"]) {
@@ -107,13 +111,13 @@ export class Keeper {
 
   async handleLifeCycle() {
     // startup logic
+
     await this.startup();
 
     // on each block logic
     let processedBlock: number;
     let isProcessing = false;
     this.provider.on("block", async () => {
-      console.log("is Startup finished : -=======", this.startupFinished);
       if (this.startupFinished) {
         const currentBlockNumber = await this.provider.getBlockNumber();
         if (processedBlock !== currentBlockNumber && !isProcessing) {
@@ -138,6 +142,7 @@ export class Keeper {
 
   async startup() {
     await this.approveSystemCoinForJoinCoin();
+
     await this.collateralAuctionHouse.loadState();
     await this.joinSystemCoins();
     await this.getSystemCoinBalance();
@@ -170,13 +175,14 @@ export class Keeper {
 
   async approveSystemCoinForJoinCoin() {
     const joinCoin = this.geb.contracts.joinCoin;
+
     const systemCoin = this.geb.contracts.systemCoin;
-    // TODO: add the check for not approving if it's already approved.
 
     const currentAllowance = await systemCoin.allowance(
       this.signer.address,
       joinCoin.address
     );
+
     if (currentAllowance.eq(0)) {
       console.info("Approving system coin to be used by coin join.");
       const tx = await systemCoin.approve(

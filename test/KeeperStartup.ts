@@ -1,6 +1,6 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import "dotenv/config";
-import hre, { ethers } from "hardhat";
+import hre from "hardhat";
 import { expect } from "chai";
 
 import { mineBlocks, sleep, changeCollateralPrice } from "./utils";

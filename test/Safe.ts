@@ -29,7 +29,7 @@ describe("Safe class", () => {
     const pastModifications = await getPastSafeModifications({ geb, provider })(
       startingBlock,
       endBlock,
-      "",
+      wethCollateral,
       50
     );
 

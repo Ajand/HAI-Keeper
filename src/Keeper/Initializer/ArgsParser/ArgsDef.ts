@@ -4,8 +4,8 @@ export const ARGS_DEF: Arg[] = [
   {
     key: "--network",
     type: String,
-    default: "mainnet",
-    help: "The network which we gonna look for contracts on sdk.",
+    default: "optimism-goerli",
+    help: "The network which we gonna look for contracts on sdk. ( defaulted to test-network for tests )",
   },
   {
     key: "--rpc-uri",
