@@ -5,6 +5,9 @@ import { KeyPassSplitter, createWallet } from "./Initializer/SignerFactory";
 import { getPastSafeModifications } from "./EventHandlers";
 import { NonceManager } from "@ethersproject/experimental";
 import * as types from "@hai-on-op/sdk/lib/typechained";
+import { fromEvent } from "rxjs";
+
+import { TransactionQueue } from "../lib/TransactionQueue";
 
 import { NativeBalance } from "../lib";
 
@@ -35,6 +38,8 @@ export class Keeper {
   provider: ethers.providers.JsonRpcProvider;
   signer: ethers.Wallet;
   geb: Geb;
+
+  transactionQueue: TransactionQueue;
   collateral: Collateral;
   safeHistory: SafeHistory;
 
@@ -62,6 +67,8 @@ export class Keeper {
 
     const keyFile = KeyPassSplitter(String(this.args["--eth-key"]));
     const wallet = createWallet(keyFile).connect(this.provider);
+
+    this.transactionQueue = new TransactionQueue(10);
 
     this.nativeBalance = new NativeBalance(this.provider, wallet, 5000);
 
@@ -130,6 +137,7 @@ export class Keeper {
     // on each block logic
     let processedBlock: number;
     let isProcessing = false;
+    fromEvent(this.provider, "block");
     this.provider.on("block", async () => {
       if (this.startupFinished) {
         const currentBlockNumber = await this.provider.getBlockNumber();
@@ -197,13 +205,20 @@ export class Keeper {
     );
 
     if (currentAllowance.eq(0)) {
-      console.info("Approving system coin to be used by coin join.");
-      const tx = await systemCoin.approve(
-        joinCoin.address,
-        ethers.constants.MaxUint256
-      );
-      await tx.wait();
-      console.info("Approved keeper's system coins to be used by coin join.");
+      this.transactionQueue.addTransaction({
+        label: "System Coin Approval",
+        task: async () => {
+          console.info("Approving system coin to be used by coin join.");
+          const tx = await systemCoin.approve(
+            joinCoin.address,
+            ethers.constants.MaxUint256
+          );
+          await tx.wait();
+          console.info(
+            "Approved keeper's system coins to be used by coin join."
+          );
+        },
+      });
     } else {
       console.info(
         "Skipping the approval for system coin to be used by coin join, because it is already approved."
