@@ -2,9 +2,10 @@ import { ethers } from "ethers";
 import { merge, interval, BehaviorSubject, Subject } from "rxjs";
 import { startWith, switchMap } from "rxjs/operators";
 
-export class NativeBalance {
+export abstract class BalanceAndAllowanceBase {
   provider: ethers.providers.JsonRpcProvider;
   wallet: ethers.Wallet;
+  intervalTime: number;
 
   value$: BehaviorSubject<ethers.BigNumber | null>;
   updateTrigger$: Subject<void>;
@@ -16,25 +17,24 @@ export class NativeBalance {
   ) {
     this.provider = provider;
     this.wallet = wallet;
+    this.intervalTime = intervalTime;
 
     this.value$ = new BehaviorSubject<ethers.BigNumber | null>(null);
     this.updateTrigger$ = new Subject<void>();
+  }
 
-    // Use switchMap to switch to the latest observable whenever updateTrigger$ emits
-    merge(interval(intervalTime), this.updateTrigger$)
+  initialize() {
+    merge(interval(this.intervalTime), this.updateTrigger$)
       .pipe(
         startWith(null),
-        switchMap(() => this.getBalance())
+        switchMap(() => this.getValue())
       )
       .subscribe((balance) => {
         this.value$.next(balance);
       });
   }
 
-  async getBalance(): Promise<ethers.BigNumber> {
-    const balance = await this.provider.getBalance(this.wallet.address);
-    return balance;
-  }
+  abstract getValue(): Promise<ethers.BigNumber>;
 
   updateBalance() {
     this.updateTrigger$.next();

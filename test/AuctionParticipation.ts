@@ -71,6 +71,10 @@ describe("Auction Participation", () => {
 
     const auctionHouse = keeper.collateralAuctionHouse;
 
+    expect(keeper.collateralBalance).to.be.equal(0);
+
     await sleep(10000);
+
+    expect(keeper.collateralBalance).to.not.be.equal(0);
   });
 });

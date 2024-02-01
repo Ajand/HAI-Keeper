@@ -9,11 +9,13 @@ import { fromEvent } from "rxjs";
 
 import { TransactionQueue } from "../lib/TransactionQueue";
 
-import { NativeBalance } from "../lib";
+import { NativeBalance, JoinCoinSystemCoinAllowance } from "../lib";
 
 import { Collateral, SafeHistory, CollateralAuctionHouse } from "../lib";
 
 import { WadFromRad } from "../lib/Math";
+
+import { approveSystemCoinForJoinCoinFactory } from "./Startup/approveSystemCoinForJoinCoin";
 
 interface KeeperOverrides {
   provider?: ethers.providers.JsonRpcProvider;
@@ -50,6 +52,7 @@ export class Keeper {
   startupFinished: boolean = false;
 
   nativeBalance: NativeBalance;
+  joinCoinSystemCoinAllowance: JoinCoinSystemCoinAllowance;
 
   coinBalance: ethers.BigNumber = ethers.BigNumber.from(0); // RAD
   collateralBalance: ethers.BigNumber = ethers.BigNumber.from(0); // WAD
@@ -70,8 +73,6 @@ export class Keeper {
 
     this.transactionQueue = new TransactionQueue(10);
 
-    this.nativeBalance = new NativeBalance(this.provider, wallet, 5000);
-
     console.info(`Keeper will interact as this address: ${wallet.address}`);
 
     this.signer = wallet.connect(this.provider);
@@ -84,6 +85,14 @@ export class Keeper {
       this.geb = new Geb(testingNetwork, this.signer);
     }
     console.info(`Geb initiated on the ${network} network`);
+
+    this.nativeBalance = new NativeBalance(this.provider, wallet, 5000);
+    this.joinCoinSystemCoinAllowance = new JoinCoinSystemCoinAllowance(
+      this.provider,
+      wallet,
+      300 * 1000,
+      this.geb
+    );
 
     if (!this.args["--collateral-type"]) {
       this.collateral = new Collateral(
@@ -137,7 +146,7 @@ export class Keeper {
     // on each block logic
     let processedBlock: number;
     let isProcessing = false;
-    fromEvent(this.provider, "block");
+    fromEvent(this.provider, "block").subscribe(async () => {});
     this.provider.on("block", async () => {
       if (this.startupFinished) {
         const currentBlockNumber = await this.provider.getBlockNumber();
@@ -155,6 +164,9 @@ export class Keeper {
           processedBlock = await this.provider.getBlockNumber();
           isProcessing = false;
 
+          await this.getCollateralBalance();
+          await this.getSystemCoinBalance();
+
           this.handleBidding();
         }
       }
@@ -162,7 +174,13 @@ export class Keeper {
   }
 
   async startup() {
-    await this.approveSystemCoinForJoinCoin();
+    const approveSystemCoinForJoinCoin = approveSystemCoinForJoinCoinFactory({
+      geb: this.geb,
+      transactionQueue: this.transactionQueue,
+      joinCoinSystemCoinAllowance: this.joinCoinSystemCoinAllowance,
+    });
+
+    await approveSystemCoinForJoinCoin();
 
     await this.collateralAuctionHouse.loadState();
     await this.joinSystemCoins();
@@ -191,38 +209,6 @@ export class Keeper {
       await this.exitSystemCoin();
     } else {
       console.info("Keeper is set up to NOT exit system coin on shutdown.");
-    }
-  }
-
-  async approveSystemCoinForJoinCoin() {
-    const joinCoin = this.geb.contracts.joinCoin;
-
-    const systemCoin = this.geb.contracts.systemCoin;
-
-    const currentAllowance = await systemCoin.allowance(
-      this.signer.address,
-      joinCoin.address
-    );
-
-    if (currentAllowance.eq(0)) {
-      this.transactionQueue.addTransaction({
-        label: "System Coin Approval",
-        task: async () => {
-          console.info("Approving system coin to be used by coin join.");
-          const tx = await systemCoin.approve(
-            joinCoin.address,
-            ethers.constants.MaxUint256
-          );
-          await tx.wait();
-          console.info(
-            "Approved keeper's system coins to be used by coin join."
-          );
-        },
-      });
-    } else {
-      console.info(
-        "Skipping the approval for system coin to be used by coin join, because it is already approved."
-      );
     }
   }
 
@@ -371,6 +357,11 @@ export class Keeper {
       await this.collateralAuctionHouse.handleAuctionsState();
 
       const auctions = this.collateralAuctionHouse.auctions;
+
+      console.log(
+        "from handle bidding, is auction deleted",
+        auctions.map((auction) => auction.deleted)
+      );
 
       for (const auction of auctions) {
         if (!auction.deleted) {
