@@ -1,9 +1,40 @@
 import { ethers } from "ethers";
 import { Geb, TokenData } from "@hai-on-op/sdk";
+import {
+  BehaviorSubject,
+  combineLatest,
+  map,
+  Observable,
+  distinctUntilChanged,
+} from "rxjs";
 
 interface CollateralInfrastructure {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
+}
+
+interface CollateralParams {
+  // collateral params;
+  debtCeiling: ethers.BigNumber; // RAD
+  debtFloor: ethers.BigNumber; // RAD
+}
+
+interface CollateralData {
+  debtAmount: ethers.BigNumber; // WAD
+  lockedAmount: ethers.BigNumber; // WAD
+  accumulatedRate: ethers.BigNumber; // RAY
+  safetyPrice: ethers.BigNumber; // RAY
+  liquidationPrice: ethers.BigNumber; // RAY
+}
+
+interface NormalizedData {
+  debtCeiling: string;
+  debtFloor: string;
+  debtAmount: string;
+  lockedAmount: string;
+  accumulatedRate: string;
+  safetyPrice: string;
+  liquidationPrice: string;
 }
 
 export class Collateral {
@@ -26,6 +57,51 @@ export class Collateral {
   safetyPrice: ethers.BigNumber | undefined; // RAY
   liquidationPrice: ethers.BigNumber | undefined; // RAY
 
+  collateralParams$: BehaviorSubject<CollateralParams | null> =
+    new BehaviorSubject<CollateralParams | null>(null);
+  collateralData$: BehaviorSubject<CollateralData | null> =
+    new BehaviorSubject<CollateralData | null>(null);
+
+  initialized$: Observable<boolean> = combineLatest([
+    this.collateralParams$,
+    this.collateralData$,
+  ]).pipe(
+    map(([collateralParams, collateralData]) => {
+      if (!collateralParams || !collateralData) return false;
+      console.info(`Collateral ${this.tokenData.symbol} is initialized`);
+      return true;
+    }),
+    distinctUntilChanged()
+  );
+
+  normalizedData$: Observable<NormalizedData | null> = combineLatest([
+    this.collateralParams$,
+    this.collateralData$,
+  ]).pipe(
+    map(([collateralParams, collateralData]) => {
+      if (!collateralParams || !collateralData) return null;
+      const { debtCeiling, debtFloor } = collateralParams;
+      const {
+        debtAmount,
+        lockedAmount,
+        accumulatedRate,
+        safetyPrice,
+        liquidationPrice,
+      } = collateralData;
+
+      return {
+        debtCeiling: ethers.utils.formatUnits(debtCeiling, 45),
+        debtFloor: ethers.utils.formatUnits(debtFloor, 45),
+        debtAmount: ethers.utils.formatUnits(debtAmount, 18),
+        lockedAmount: ethers.utils.formatUnits(lockedAmount, 18),
+        accumulatedRate: ethers.utils.formatUnits(accumulatedRate, 27),
+        safetyPrice: ethers.utils.formatUnits(safetyPrice, 27),
+        liquidationPrice: ethers.utils.formatUnits(liquidationPrice, 27),
+      };
+    }),
+    distinctUntilChanged()
+  );
+
   constructor(
     { provider, geb }: CollateralInfrastructure,
     tokenData: TokenData
@@ -39,14 +115,12 @@ export class Collateral {
     try {
       console.info(`Collateral ${this.tokenData.symbol} is initializing.`);
       await this.getCollateralInfo();
-      this.initialized = true;
-      console.info(`Collateral ${this.tokenData.symbol} got initialized.`);
     } catch (err) {
       console.error(err);
     }
   }
 
-  async updateInfo() {
+  async update() {
     try {
       console.info(`Updating ${this.tokenData.symbol} collateral.`);
       await this.getCollateralInfo();
@@ -69,43 +143,22 @@ export class Collateral {
     const collateralParams = await this.geb.contracts.safeEngine.cParams(
       this.tokenData.bytes32String
     );
-    this.debtCeiling = collateralParams.debtCeiling;
-    this.debtFloor = collateralParams.debtFloor;
+    this.collateralParams$.next({
+      debtCeiling: collateralParams.debtCeiling,
+      debtFloor: collateralParams.debtFloor,
+    });
   }
 
   async getCollateralData() {
     const collateralData = await this.geb.contracts.safeEngine.cData(
       this.tokenData.bytes32String
     );
-
-    this.debtAmount = collateralData.debtAmount;
-    this.lockedAmount = collateralData.lockedAmount;
-    this.accumulatedRate = collateralData.accumulatedRate;
-    this.safetyPrice = collateralData.safetyPrice;
-    this.liquidationPrice = collateralData.liquidationPrice;
-  }
-
-  getNormalizedInfo() {
-    if (
-      this.debtCeiling &&
-      this.debtFloor &&
-      this.debtAmount &&
-      this.lockedAmount &&
-      this.accumulatedRate &&
-      this.safetyPrice &&
-      this.liquidationPrice
-    ) {
-      return {
-        debtCeiling: ethers.utils.formatUnits(this.debtCeiling, 45),
-        debtFloor: ethers.utils.formatUnits(this.debtFloor, 45),
-        debtAmount: ethers.utils.formatUnits(this.debtAmount, 18),
-        lockedAmount: ethers.utils.formatUnits(this.lockedAmount, 18),
-        accumulatedRate: ethers.utils.formatUnits(this.accumulatedRate, 27),
-        safetyPrice: ethers.utils.formatUnits(this.safetyPrice, 27),
-        liquidationPrice: ethers.utils.formatUnits(this.liquidationPrice, 27),
-      };
-    } else {
-      throw new Error("not initialized yet.");
-    }
+    this.collateralData$.next({
+      debtAmount: collateralData.debtAmount,
+      lockedAmount: collateralData.lockedAmount,
+      accumulatedRate: collateralData.accumulatedRate,
+      safetyPrice: collateralData.safetyPrice,
+      liquidationPrice: collateralData.liquidationPrice,
+    });
   }
 }
