@@ -50,5 +50,5 @@ export const changeCollateralPrice =
     await geb.contracts.oracleRelayer.updateCollateralPrice(
       collateralByteString
     );
-    await collateral.updateInfo();
+    await collateral.update();
   };

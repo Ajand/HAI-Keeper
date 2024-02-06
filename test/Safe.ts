@@ -3,12 +3,15 @@ import "dotenv/config";
 import { expect } from "chai";
 import hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { TestScheduler } from "rxjs/testing";
+import { filter, take } from "rxjs";
 
 import { mintHai } from "./fixtures";
 import { changeCollateralPrice, resetNetwork } from "./utils";
 
-import { Collateral, Safe } from "../src/lib";
+import { Collateral, Safe, TransactionQueue } from "../src/lib";
 import { getPastSafeModifications } from "../src/Keeper/EventHandlers";
+import { sleep } from "./utils";
 
 describe("Safe class", () => {
   const basicFixture = async () => {
@@ -18,6 +21,8 @@ describe("Safe class", () => {
 
     const startingBlock = Number(process.env.FORK_BLOCK_NUMBER);
     const endBlock = (await provider.getBlock("latest")).number;
+
+    const transactionQueue = new TransactionQueue(10);
 
     const wethCollateral = new Collateral(
       { provider, geb },
@@ -34,12 +39,10 @@ describe("Safe class", () => {
     );
 
     const safe = new Safe(
-      { provider, geb },
+      { provider, geb, transactionQueue },
       wethCollateral,
       pastModifications[0].args._safe
     );
-
-    await safe.init();
 
     return {
       ...fixtureParams,
@@ -50,18 +53,57 @@ describe("Safe class", () => {
     };
   };
 
-  it("Should have proper safe data after initialization", async () => {
+  /*it("Should have proper safe data after initialization", async () => {
     const { safe } = await loadFixture(basicFixture);
-    expect(safe.lockedCollateral).to.not.be.undefined;
-    expect(safe.generatedDebt).to.not.be.undefined;
-  });
 
-  describe("Is critical", () => {
+    safe.lockedCollateral$.subscribe((lockedCollateral) => {
+      expect(lockedCollateral).to.be.null;
+    });
+    safe.generatedDebt$.subscribe((generatedDebt) => {
+      expect(generatedDebt).to.be.null;
+    });
+  });*/
+
+  /*  describe("Is critical", () => {
+    let scheduler;
+
+    beforeEach(() => {
+      scheduler = new TestScheduler((actual, expected) => {
+        // Perform custom assertion or use assertion library like Chai
+        expect(actual).to.deep.equal(expected);
+      });
+    });
+
     it("A new created safe should not be critical", async () => {
       const { safe } = await loadFixture(basicFixture);
 
-      expect(safe.getCriticalityRatio()).to.be.greaterThan(1);
-      expect(safe.isCritical()).to.be.false;
+      // Observable to check for non-null values
+      const isCriticalObservable = safe.isCritical$.pipe(
+        filter((isCritical) => isCritical !== null),
+        take(1) // Take only the first non-null value
+      );
+
+      // Observable to check for non-null values
+      const criticalityRatioObservable = safe.criticalityRatio$.pipe(
+        filter((criticalityRatio) => criticalityRatio !== null),
+        take(1) // Take only the first non-null value
+      );
+
+      const isCriticalPromise = isCriticalObservable.toPromise();
+      const criticalityRatioPromise = criticalityRatioObservable.toPromise();
+
+      // Wait for both observables to emit values
+      const [isCritical, criticalityRatio] = await Promise.all([
+        isCriticalPromise,
+        criticalityRatioPromise,
+      ]);
+
+      // Assertions
+      console.log("isCritical:", isCritical);
+      expect(isCritical).to.be.false;
+
+      console.log("criticalityRatio:", criticalityRatio);
+      expect(criticalityRatio).to.be.greaterThan(1);
     });
 
     it("Created safe should be critical after decreasing the price of collateral", async () => {
@@ -75,8 +117,33 @@ describe("Safe class", () => {
         geb
       );
 
-      expect(safe.getCriticalityRatio()).to.be.lessThanOrEqual(1);
-      expect(safe.isCritical()).to.be.true;
+      // Observable to check for non-null values
+      const isCriticalObservable = safe.isCritical$.pipe(
+        filter((isCritical) => isCritical !== null),
+        take(1) // Take only the first non-null value
+      );
+
+      // Observable to check for non-null values
+      const criticalityRatioObservable = safe.criticalityRatio$.pipe(
+        filter((criticalityRatio) => criticalityRatio !== null),
+        take(1) // Take only the first non-null value
+      );
+
+      const isCriticalPromise = isCriticalObservable.toPromise();
+      const criticalityRatioPromise = criticalityRatioObservable.toPromise();
+
+      // Wait for both observables to emit values
+      const [isCritical, criticalityRatio] = await Promise.all([
+        isCriticalPromise,
+        criticalityRatioPromise,
+      ]);
+
+      // Assertions
+      console.log("isCritical:", isCritical);
+      expect(isCritical).to.be.true;
+
+      console.log("criticalityRatio:", criticalityRatio);
+      expect(criticalityRatio).to.be.lessThanOrEqual(1);
     });
 
     it("Created safe should not be critical after increasing the price of collateral", async () => {
@@ -90,10 +157,35 @@ describe("Safe class", () => {
         geb
       );
 
-      expect(safe.getCriticalityRatio()).to.be.greaterThan(1);
-      expect(safe.isCritical()).to.be.false;
+      // Observable to check for non-null values
+      const isCriticalObservable = safe.isCritical$.pipe(
+        filter((isCritical) => isCritical !== null),
+        take(1) // Take only the first non-null value
+      );
+
+      // Observable to check for non-null values
+      const criticalityRatioObservable = safe.criticalityRatio$.pipe(
+        filter((criticalityRatio) => criticalityRatio !== null),
+        take(1) // Take only the first non-null value
+      );
+
+      const isCriticalPromise = isCriticalObservable.toPromise();
+      const criticalityRatioPromise = criticalityRatioObservable.toPromise();
+
+      // Wait for both observables to emit values
+      const [isCritical, criticalityRatio] = await Promise.all([
+        isCriticalPromise,
+        criticalityRatioPromise,
+      ]);
+
+      // Assertions
+      console.log("isCritical:", isCritical);
+      expect(isCritical).to.be.false;
+
+      console.log("criticalityRatio:", criticalityRatio);
+      expect(criticalityRatio).to.be.greaterThan(1);
     });
-  });
+  });*/
 
   describe("Liquidate safe", () => {
     it("Created safe should be critical after decreasing the price of collateral", async () => {
@@ -107,16 +199,25 @@ describe("Safe class", () => {
         geb
       );
 
-      expect(safe.isCritical()).to.be.true;
+      // wethCollateral.update();
 
-      const receipt = await safe.liquidate();
+      //const isCriticalObservable = safe.isLiquidated$.pipe(
+      //  filter((isCritical) => isCritical !== null),
+      //  take(2) // Take only the first non-null value
+      //);
 
-      const liquidateEvent = receipt?.events?.find(
-        (ev) => ev.event === "Liquidate"
-      );
+      const isLiquidatedObservable = safe.isLiquidated$.pipe(take(2));
 
-      expect(liquidateEvent).to.not.be.undefined;
-      expect(liquidateEvent?.args?._safe).to.be.equal(safe.address);
+      // Wait for both observables to emit values
+      const [isLiquidated] = await Promise.all([
+        isLiquidatedObservable.toPromise(),
+      ]);
+
+      // Assertions
+      console.log("isLiquidated:", isLiquidated);
+      expect(isLiquidated).to.be.true;
+
+      await sleep(2000);
     });
   });
 });

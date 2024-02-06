@@ -1,16 +1,33 @@
 import { ethers } from "ethers";
 import { Geb } from "@hai-on-op/sdk";
+import {
+  BehaviorSubject,
+  combineLatest,
+  map,
+  Observable,
+  distinctUntilChanged,
+} from "rxjs";
 
 import { Collateral } from "../Collateral";
+import { TransactionQueue } from "../TransactionQueue";
 
 interface SafeInfrustructure {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
+  transactionQueue: TransactionQueue;
+}
+
+interface CriticalAssesmentParams {
+  accumulatedRate: ethers.BigNumber;
+  liquidationPrice: ethers.BigNumber;
+  generatedDebt: ethers.BigNumber;
+  lockedCollateral: ethers.BigNumber;
 }
 
 export class Safe {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
+  transactionQueue: TransactionQueue;
 
   initialized: boolean = false;
 
@@ -18,30 +35,152 @@ export class Safe {
   address: string;
 
   // safe params
-  lockedCollateral: ethers.BigNumber | undefined; // Wad
-  generatedDebt: ethers.BigNumber | undefined; // Wad
+  //lockedCollateral: ethers.BigNumber | undefined; // Wad
+  //generatedDebt: ethers.BigNumber | undefined; // Wad
+
+  lockedCollateral$: BehaviorSubject<ethers.BigNumber | null>;
+  generatedDebt$: BehaviorSubject<ethers.BigNumber | null>;
+
+  initalized$: Observable<boolean>;
+
+  criticalAssessmentParams$: Observable<CriticalAssesmentParams | null>;
+  criticalityRatio$: Observable<number | null>;
+  isCritical$: Observable<boolean | null>;
+
+  canLiquidate$: Observable<boolean>;
+
+  isLiquidated$ = new BehaviorSubject<boolean>(false);
 
   constructor(
-    { provider, geb }: SafeInfrustructure,
+    { provider, geb, transactionQueue }: SafeInfrustructure,
     collateral: Collateral,
     address: string
   ) {
     this.provider = provider;
     this.geb = geb;
+    this.transactionQueue = transactionQueue;
     this.collateral = collateral;
     this.address = address;
+
+    this.lockedCollateral$ = new BehaviorSubject<ethers.BigNumber | null>(null);
+    this.generatedDebt$ = new BehaviorSubject<ethers.BigNumber | null>(null);
+
+    this.initalized$ = combineLatest([
+      this.lockedCollateral$,
+      this.generatedDebt$,
+    ]).pipe(
+      map(([lockedCollateral, generatedDebt]) => {
+        if (
+          lockedCollateral instanceof ethers.BigNumber &&
+          generatedDebt instanceof ethers.BigNumber
+        ) {
+          return true;
+        } else {
+          return false;
+        }
+      }),
+      distinctUntilChanged()
+    );
+
+    this.criticalAssessmentParams$ = combineLatest([
+      this.lockedCollateral$,
+      this.generatedDebt$,
+      this.collateral.collateralData$,
+    ]).pipe(
+      map(([lockedCollateral, generatedDebt, collateralData]) => {
+        if (!collateralData) return null;
+
+        const { accumulatedRate, liquidationPrice } = collateralData;
+
+        if (generatedDebt === null || lockedCollateral === null) {
+          // safe not initialized
+          return null;
+        }
+
+        return {
+          accumulatedRate,
+          liquidationPrice,
+          generatedDebt,
+          lockedCollateral,
+        };
+      }),
+      distinctUntilChanged()
+    );
+
+    this.criticalityRatio$ = this.criticalAssessmentParams$.pipe(
+      map((params) => {
+        if (params === null) return null;
+
+        const {
+          accumulatedRate,
+          liquidationPrice,
+          generatedDebt,
+          lockedCollateral,
+        } = params;
+
+        const ratio =
+          Number(
+            ethers.utils.formatUnits(lockedCollateral.mul(liquidationPrice), 45)
+          ) /
+          Number(
+            ethers.utils.formatUnits(generatedDebt.mul(accumulatedRate), 45)
+          );
+
+        // Ratio less than 1 means the safe is critical
+        return ratio;
+      }),
+      distinctUntilChanged()
+    );
+
+    this.isCritical$ = this.criticalAssessmentParams$.pipe(
+      map((params) => {
+        if (params === null) return null;
+
+        const {
+          accumulatedRate,
+          liquidationPrice,
+          generatedDebt,
+          lockedCollateral,
+        } = params;
+
+        return lockedCollateral
+          .mul(liquidationPrice)
+          .lt(generatedDebt.mul(accumulatedRate));
+      }),
+      distinctUntilChanged()
+    );
+
+    this.canLiquidate$ = this.isCritical$.pipe(
+      map((isCritical) => isCritical === true),
+      distinctUntilChanged()
+    );
+
+    this.canLiquidate$.subscribe((canLiquidate) => {
+      console.log(canLiquidate);
+
+      if (canLiquidate) {
+        const liquidationEngine = this.geb.contracts.liquidationEngine;
+
+        this.transactionQueue.addTransaction({
+          label: `Safe Liquidation`,
+          task: async () => {
+            console.info(`Liquidating Safe ${this.address}`);
+            const tx = await liquidationEngine.liquidateSAFE(
+              this.collateral.tokenData.bytes32String,
+              this.address
+            );
+            await tx.wait();
+            console.info(`Liquidating Safe ${this.address}`);
+            this.isLiquidated$.next(true);
+          },
+        });
+      }
+    });
+
+    this.getSafeParams();
   }
 
-  async init() {
-    try {
-      await this.getSafeInfo();
-      this.initialized = true;
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  async updateInfo() {
+  async update() {
     try {
       await this.getSafeInfo();
     } catch (err) {
@@ -62,14 +201,16 @@ export class Safe {
       this.collateral.tokenData.bytes32String,
       this.address
     );
-    this.lockedCollateral = safeParams.lockedCollateral;
-    this.generatedDebt = safeParams.generatedDebt;
+    //this.lockedCollateral = safeParams.lockedCollateral;
+    //this.generatedDebt = safeParams.generatedDebt;
+    this.lockedCollateral$.next(safeParams.lockedCollateral);
+    this.generatedDebt$.next(safeParams.generatedDebt);
   }
 
   async getSafeEngineParams() {}
 
-  getNormalizedInfo() {
-    if (this.generatedDebt && this.lockedCollateral) {
+  //getNormalizedInfo() {
+  /*if (this.generatedDebt && this.lockedCollateral) {
       const lockedCollateral = ethers.utils.formatUnits(
         this.lockedCollateral,
         18
@@ -82,10 +223,10 @@ export class Safe {
       };
     } else {
       throw new Error("not initialized yet.");
-    }
-  }
+    }*/
+  //}
 
-  getCriticalAssesmentParams() {
+  /*getCriticalAssesmentParams() {
     const accumulatedRate = this.collateral.accumulatedRate;
     const liquidationPrice = this.collateral.liquidationPrice;
 
@@ -105,7 +246,7 @@ export class Safe {
     };
   }
 
-  getCriticalityRatio() {
+  /*getCriticalityRatio() {
     const {
       accumulatedRate,
       liquidationPrice,
@@ -121,9 +262,9 @@ export class Safe {
 
     // Ratio less than 1 means the safe is critical
     return ratio;
-  }
+  }*/
 
-  isCritical() {
+  /*isCritical() {
     const {
       accumulatedRate,
       liquidationPrice,
@@ -136,13 +277,13 @@ export class Safe {
       generatedDebt.mul(accumulatedRate);
 
     return isCrit;
-  }
+  }*/
 
-  minBigNumber(a: ethers.BigNumber, b: ethers.BigNumber): ethers.BigNumber {
+  /* minBigNumber(a: ethers.BigNumber, b: ethers.BigNumber): ethers.BigNumber {
     return a.lt(b) ? a : b;
-  }
+  }*/
 
-  getLimitAdjustedDebt(
+  /*getLimitAdjustedDebt(
     generatedDebt: ethers.BigNumber,
     accumulatedRate: ethers.BigNumber,
     liquidationQuantity: ethers.BigNumber,
@@ -154,7 +295,7 @@ export class Safe {
     //console.log(WAD);
 
     return 5;
-    /*let limitAdjustedDebt: ethers.BigNumber = this.minBigNumber(
+   let limitAdjustedDebt: ethers.BigNumber = this.minBigNumber(
       generatedDebt,
       liquidationQuantity / liquidationPenalty / accumulatedRate
     );
@@ -166,10 +307,10 @@ export class Safe {
         ? generatedDebt
         : limitAdjustedDebt;
 
-    return limitAdjustedDebt;*/
-  }
+    return limitAdjustedDebt;
+  }*/
 
-  canLiquidate() {
+  /*canLiquidate() {
     // In the RAI system there was a check for liqudation that was about on auctioned system coin limit
     // In HAI code base that check is removed so it does not make sense to check it in the keeper as well
     // Also we have to add debt limits later to this
@@ -178,9 +319,9 @@ export class Safe {
     //this.getLimitAdjustedDebt(this.generatedDebt, this.collateral.accumulatedRate,);
 
     return this.isCritical();
-  }
+  }*/
 
-  async liquidate() {
+  /*async liquidate() {
     if (!this.canLiquidate) {
       throw new Error("Not liquidatable!");
     }
@@ -192,7 +333,7 @@ export class Safe {
 
     const liquidationEngine = this.geb.contracts.liquidationEngine;
 
-    const liquidationEngineParams = await liquidationEngine._params();
+    //const liquidationEngineParams = await liquidationEngine._params();
 
     //console.log(
     //  "liquidation engine params: ",
@@ -221,5 +362,5 @@ export class Safe {
       //const decodedError = liquidationEngine.interface.parseError(revertData);
       //console.log(`Transaction failed: ${decodedError.name}`);
     }
-  }
+  }*/
 }

@@ -4,15 +4,18 @@ import { Geb } from "@hai-on-op/sdk";
 import { Safe } from "../Safe";
 import { Collateral } from "../Collateral";
 import { getPastSafeModifications } from "../../Keeper/EventHandlers";
+import { TransactionQueue } from "../TransactionQueue";
 
 interface SafeInfrustructure {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
+  transactionQueue: TransactionQueue;
 }
 
 export class SafeHistory {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
+  transactionQueue: TransactionQueue;
   collateral: Collateral;
 
   cacheLookback = 12; // for handling block reorgs
@@ -21,12 +24,14 @@ export class SafeHistory {
   safes: Map<string, Safe> = new Map();
 
   constructor(
-    { provider, geb }: SafeInfrustructure,
+    { provider, geb, transactionQueue }: SafeInfrustructure,
     collateral: Collateral,
     from: number
   ) {
     this.provider = provider;
     this.geb = geb;
+    this.transactionQueue = transactionQueue;
+
     this.collateral = collateral;
     this.cacheBlock = from;
     console.info("Safe history instance created.");
@@ -51,18 +56,18 @@ export class SafeHistory {
 
       if (this.safes.has(safeAddress)) {
         const safe = this.safes.get(safeAddress);
-        await safe?.updateInfo();
+        await safe?.update();
       } else {
         const safe = new Safe(
           {
             geb: this.geb,
             provider: this.provider,
+            transactionQueue: this.transactionQueue,
           },
           this.collateral,
           safeAddress
         );
         try {
-          await safe.init();
           this.safes.set(safeAddress, safe);
         } catch (err) {
           console.error(err);
