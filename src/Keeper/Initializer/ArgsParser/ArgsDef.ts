@@ -8,6 +8,12 @@ export const ARGS_DEF: Arg[] = [
     help: "The network which we gonna look for contracts on sdk. ( defaulted to test-network for tests )",
   },
   {
+    key: "--chunk-size",
+    type: Number,
+    default: 2000,
+    help: "The chunk size for getting blocks events. ( defaulted to 20000 )",
+  },
+  {
     key: "--rpc-uri",
     type: String,
     required: true,

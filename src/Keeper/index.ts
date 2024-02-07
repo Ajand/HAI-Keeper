@@ -44,6 +44,7 @@ export class Keeper {
   safeHistory: SafeHistory;
 
   collateralAuctionHouse: CollateralAuctionHouse;
+  chunkSize: number;
 
   liquidatedSafes: Set<string> = new Set();
 
@@ -69,8 +70,6 @@ export class Keeper {
     const wallet = createWallet(keyFile).connect(this.provider);
 
     this.transactionQueue = new TransactionQueue(10);
-
-    this.nativeBalance = new NativeBalance(this.provider, wallet, 5000);
 
     console.info(`Keeper will interact as this address: ${wallet.address}`);
 
@@ -99,6 +98,8 @@ export class Keeper {
       this.collateral.init();
     }
 
+    this.chunkSize = Number(this.args["--chunk-size"]);
+
     this.safeHistory = new SafeHistory(
       { provider: this.provider, geb: this.geb },
       this.collateral,
@@ -125,6 +126,8 @@ export class Keeper {
     ]
       ? true
       : false;
+
+    this.nativeBalance = new NativeBalance(this.provider, wallet, 5000);
 
     this.handleLifeCycle();
   }
@@ -329,7 +332,7 @@ export class Keeper {
       await this.collateral.init();
     }
 
-    const safes = await this.safeHistory.getSafes();
+    const safes = await this.safeHistory.getSafes(this.chunkSize);
 
     const safesArray = [...safes].map((safe) => safe[1]);
 

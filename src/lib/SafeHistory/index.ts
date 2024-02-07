@@ -32,7 +32,7 @@ export class SafeHistory {
     console.info("Safe history instance created.");
   }
 
-  async getSafes() {
+  async getSafes(chunkSize: number) {
     const safeAddresses = new Set();
     let mods = [];
 
@@ -42,7 +42,7 @@ export class SafeHistory {
     mods = await getPastSafeModifications({
       geb: this.geb,
       provider: this.provider,
-    })(fromBlock, toBlock, this.collateral, 2000);
+    })(fromBlock, toBlock, this.collateral, chunkSize);
 
     for (const mod of mods) {
       const safeAddress = mod.args._safe;
