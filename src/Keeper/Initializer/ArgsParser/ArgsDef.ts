@@ -68,12 +68,6 @@ export const ARGS_DEF: Arg[] = [
     help: "Do not bid on auctions. This includes flash swaps",
   },
   {
-    key: "--start-auctions-only",
-    type: Boolean,
-    default: false,
-    help: "Do not bid on auctions. This includes flash swaps",
-  },
-  {
     key: "--settle-auctions-for",
     type: (value: string[]) => {
       return value.reduce((pV: string[], cV: string) => {

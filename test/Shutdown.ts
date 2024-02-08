@@ -19,7 +19,7 @@ const ALL_ARGS_KEY_VALUE = {
 describe("Shutting down the keeper", () => {
   beforeEach(async function () {});
 
-  /*it("Should properly shut down the keeper and exit collateral", async () => {
+  it("Should properly shut down the keeper and exit collateral", async () => {
     const { provider, openSafeAndGenerateDebt, geb, fixtureWallet } =
       await loadFixture(mintHai);
 
@@ -84,7 +84,7 @@ describe("Shutting down the keeper", () => {
     await keeper.shutdown();
 
     expect(await getCollateralBalance()).to.be.equal(0);
-  });*/
+  });
 
   it("Should properly shut down the keeper and exit system coin", async () => {
     const { provider, openSafeAndGenerateDebt, geb, fixtureWallet } =
@@ -118,16 +118,20 @@ describe("Shutting down the keeper", () => {
       }
     );
 
+    console.log(await systemCoin.balanceOf(keeperAddress));
+
     await provider.send("hardhat_setBalance", [
       keeper.signer.address,
       ethers.utils.parseEther("1000000").toHexString(),
     ]);
 
-    await sleep(2000);
+    await sleep(5000);
 
     expect(keeper.coinBalance).to.not.be.equal(0);
 
     await keeper.shutdown();
+
+    await sleep(2000);
 
     expect(keeper.coinBalance).to.be.equal(0);
   });

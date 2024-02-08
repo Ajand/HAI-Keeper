@@ -1,6 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import "dotenv/config";
-import hre, { ethers } from "hardhat";
+import { ethers } from "ethers";
+import hre from "hardhat";
 import { expect } from "chai";
 
 import { mineBlocks, sleep, changeCollateralPrice } from "./utils";
@@ -20,7 +21,7 @@ describe("Keeper Liquidation", () => {
 
   it("Should liquidate liquidatable safes", async () => {
     const { provider, openSafeAndGenerateDebt, geb, fixtureWallet } =
-      await loadFixture(mintHai);
+      await mintHai();
 
     await mineBlocks(100);
     const startingBlock = Number(process.env.FORK_BLOCK_NUMBER) + 100;
@@ -100,6 +101,92 @@ describe("Keeper Liquidation", () => {
     expect(keeper.liquidatedSafes.has(String(safe1))).to.be.true;
     expect(keeper.liquidatedSafes.has(String(safe2))).to.be.false;
     expect(keeper.liquidatedSafes.has(String(safe3))).to.be.true;
+    expect(keeper.liquidatedSafes.has(String(safe4))).to.be.false;
+  });
+
+  it("Should not liquidate safes in bid only mode", async () => {
+    const { provider, openSafeAndGenerateDebt, geb, fixtureWallet } =
+      await mintHai();
+
+    await mineBlocks(100);
+    const startingBlock = Number(process.env.FORK_BLOCK_NUMBER) + 100;
+
+    const keeper = new Keeper(
+      keyValueArgsToList({
+        ...ALL_ARGS_KEY_VALUE,
+        "--from-block": startingBlock.toString(),
+        "--bid-only": true,
+      }),
+      {
+        provider: provider,
+      }
+    );
+
+    await provider.send("hardhat_setBalance", [
+      keeper.signer.address,
+      ethers.utils.parseEther("1000000").toHexString(),
+    ]);
+
+    const collateralAmount = ethers.utils.parseEther("5").toHexString();
+    const haiAmount = ethers.utils.parseEther("7500").toHexString();
+    const safeHaiAmount = ethers.utils.parseEther("1000").toHexString();
+
+    await sleep(2000);
+
+    const safe1 = await openSafeAndGenerateDebt(collateralAmount, haiAmount);
+    await sleep(2000);
+
+    expect(keeper.liquidatedSafes.size).to.be.equal(0);
+
+    await mineBlocks(2);
+    await sleep(2000);
+
+    const safe2 = await openSafeAndGenerateDebt(
+      collateralAmount,
+      safeHaiAmount
+    );
+    await sleep(2000);
+
+    expect(keeper.liquidatedSafes.size).to.be.equal(0);
+
+    await mineBlocks(2);
+    await sleep(2000);
+
+    const safe3 = await openSafeAndGenerateDebt(collateralAmount, haiAmount);
+    await sleep(2000);
+
+    expect(keeper.liquidatedSafes.size).to.be.equal(0);
+
+    await mineBlocks(2);
+    await sleep(2000);
+
+    // After reducing the collateral price, the almost critical safes should be liquidated
+    await changeCollateralPrice(150000000000, 105000000000, keeper.collateral)(
+      hre,
+      provider,
+      fixtureWallet,
+      geb
+    );
+
+    await sleep(5000);
+
+    expect(keeper.liquidatedSafes.size).to.be.equal(0);
+    expect(keeper.liquidatedSafes.has(String(safe1))).to.be.false;
+    expect(keeper.liquidatedSafes.has(String(safe2))).to.be.false;
+    expect(keeper.liquidatedSafes.has(String(safe3))).to.be.false;
+
+    const safe4 = await openSafeAndGenerateDebt(
+      collateralAmount,
+      safeHaiAmount
+    );
+
+    await sleep(2000);
+    await mineBlocks(2);
+
+    expect(keeper.liquidatedSafes.size).to.be.equal(0);
+    expect(keeper.liquidatedSafes.has(String(safe1))).to.be.false;
+    expect(keeper.liquidatedSafes.has(String(safe2))).to.be.false;
+    expect(keeper.liquidatedSafes.has(String(safe3))).to.be.false;
     expect(keeper.liquidatedSafes.has(String(safe4))).to.be.false;
   });
 });

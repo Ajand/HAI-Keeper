@@ -5,16 +5,19 @@ import { ICollateralAuctionHouse } from "@hai-on-op/sdk/lib/typechained/ICollate
 import { Collateral } from "../Collateral";
 
 import { CollateralAuction } from "./CollateralAuction";
+import { TransactionQueue } from "../TransactionQueue";
 
 interface CollateralAuctionHouseInfrastructure {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
+  transactionQueue: TransactionQueue;
 }
 
 export class CollateralAuctionHouse {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
   collateral: Collateral;
+  transactionQueue: TransactionQueue;
 
   loaded: boolean = false;
 
@@ -23,12 +26,13 @@ export class CollateralAuctionHouse {
   auctions: Array<CollateralAuction> = [];
 
   constructor(
-    { provider, geb }: CollateralAuctionHouseInfrastructure,
+    { provider, geb, transactionQueue }: CollateralAuctionHouseInfrastructure,
     collateral: Collateral
   ) {
     this.provider = provider;
     this.geb = geb;
     this.collateral = collateral;
+    this.transactionQueue = transactionQueue;
 
     this.contract =
       this.geb.contracts.tokenCollateralAuctionHouse[
@@ -58,16 +62,22 @@ export class CollateralAuctionHouse {
         this.contract.address
       );
     if (!isCollateralApprovedForAddress) {
-      console.info(
-        "Approving keeper's address to be used by collateral auction house."
-      );
-      const tx = await this.geb.contracts.safeEngine.approveSAFEModification(
-        this.contract.address
-      );
-      await tx.wait();
-      console.info(
-        "Keeper's address approved to be used by collateral auction house."
-      );
+      this.transactionQueue.addTransaction({
+        label: "Collateral auction house's, safe engine approval",
+        task: async () => {
+          console.info(
+            "Approving keeper's address to be used by collateral auction house."
+          );
+          const tx =
+            await this.geb.contracts.safeEngine.approveSAFEModification(
+              this.contract.address
+            );
+          await tx.wait();
+          console.info(
+            "Keeper's address approved to be used by collateral auction house."
+          );
+        },
+      });
     } else {
       console.info(
         "Keeper's address is already approved to be used by collateral auction house."
@@ -88,6 +98,7 @@ export class CollateralAuctionHouse {
 
       for (const auctionId of notFollowedActionsIds) {
         const auction = new CollateralAuction(
+          this.transactionQueue,
           auctionId,
           this.contract,
           this.geb.contracts.safeEngine,

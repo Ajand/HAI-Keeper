@@ -56,6 +56,8 @@ export class Keeper {
   collateralBalance: ethers.BigNumber = ethers.BigNumber.from(0); // WAD
 
   isBidding: boolean;
+  isLiquidating: boolean;
+
   keepSystemCoinInSafeEngine: boolean;
   keepCollateralInSafeEngine: boolean;
 
@@ -110,12 +112,14 @@ export class Keeper {
       {
         provider: this.provider,
         geb: this.geb,
+        transactionQueue: this.transactionQueue,
       },
       this.collateral
     );
 
     // Setting up the keeper setup props
     this.isBidding = this.args["--start-auctions-only"] ? false : true;
+    this.isLiquidating = this.args["--bid-only"] ? false : true;
     this.keepSystemCoinInSafeEngine = this.args[
       "--keep-system-coin-in-safe-engine-on-exit"
     ]
@@ -147,7 +151,9 @@ export class Keeper {
         if (processedBlock !== currentBlockNumber && !isProcessing) {
           isProcessing = true;
           try {
-            this.checkSafes();
+            if (this.isLiquidating) {
+              this.checkSafes();
+            }
             if (this.collateralAuctionHouse.loaded) {
               await this.collateralAuctionHouse.reloadState();
             }
@@ -165,6 +171,18 @@ export class Keeper {
   }
 
   async startup() {
+    if (this.isBidding) {
+      console.info("This keeper bids in auctions if it finds an opportunity");
+    } else {
+      console.warn("This keeper won't bid in auctions!");
+    }
+
+    if (this.isLiquidating) {
+      console.info("This keeper liquidate safes if it find an opportunity");
+    } else {
+      console.warn("This keeper won't liquidate safes!");
+    }
+
     await this.approveSystemCoinForJoinCoin();
 
     await this.collateralAuctionHouse.loadState();
@@ -247,39 +265,62 @@ export class Keeper {
       }
     }
 
-    const tx = await joinCoin.join(this.signer.address, keeperBalance);
-    await tx.wait();
-    console.info(`Joined ${keeperBalance} system coin.`);
+    this.transactionQueue.addTransaction({
+      label: "Joining system coin",
+      task: async () => {
+        console.info("Joining system coin to be used by coin join.");
+        const tx = await joinCoin.join(this.signer.address, keeperBalance);
+        await tx.wait();
+        console.info(`Joined ${keeperBalance} system coin.`);
+        await this.getSystemCoinBalance();
+      },
+    });
   }
 
   async exitCollateral() {
-    console.info("Exiting the collateral from the coin join.");
     const collateralJoin = types.ICollateralJoin__factory.connect(
       this.collateral.tokenData.collateralJoin,
       this.signer
     );
     await this.getCollateralBalance();
-    await collateralJoin.exit(this.signer.address, this.collateralBalance);
-    console.info(
-      `Exited ${this.collateralBalance} collaterals from the collateral join.`
-    );
-    await this.getCollateralBalance();
+
+    this.transactionQueue.addTransaction({
+      label: "Collateral Exit",
+      task: async () => {
+        console.info("Exiting the collateral from the coin join.");
+        const tx = await collateralJoin.exit(
+          this.signer.address,
+          this.collateralBalance
+        );
+        await tx.wait();
+        console.info(
+          `Exited ${this.collateralBalance} collaterals from the collateral join.`
+        );
+        await this.getCollateralBalance();
+      },
+    });
   }
 
   async exitSystemCoin() {
-    console.info("Exiting the system coins from the coin join.");
     const joinCoin = this.geb.contracts.joinCoin;
     await this.handleSafeApprovalForExit();
     await this.getSystemCoinBalance();
-    const tx = await joinCoin.exit(
-      this.signer.address,
-      WadFromRad(this.coinBalance)
-    );
-    await tx.wait();
-    console.info(
-      `Exited ${this.collateralBalance} system coin from the coin join.`
-    );
-    await this.getSystemCoinBalance();
+
+    this.transactionQueue.addTransaction({
+      label: "System coin exit",
+      task: async () => {
+        console.info("Exiting the system coins from the coin join.");
+        const tx = await joinCoin.exit(
+          this.signer.address,
+          WadFromRad(this.coinBalance)
+        );
+        await tx.wait();
+        console.info(
+          `Exited ${this.coinBalance} system coin from the coin join.`
+        );
+        await this.getSystemCoinBalance();
+      },
+    });
   }
 
   async handleSafeApprovalForExit() {
@@ -292,14 +333,20 @@ export class Keeper {
       );
 
     if (!isCollateralApprovedForAddress) {
-      console.info(
-        "Approving keeper's address to be able exit system by coin join."
-      );
-      const tx = await this.geb.contracts.safeEngine.approveSAFEModification(
-        joinCoin.address
-      );
-      await tx.wait();
-      console.info("Keeper's address approved to be used by coin join.");
+      this.transactionQueue.addTransaction({
+        label: "Safe Approval to exit",
+        task: async () => {
+          console.info(
+            "Approving keeper's address to be able exit system by coin join."
+          );
+          const tx =
+            await this.geb.contracts.safeEngine.approveSAFEModification(
+              joinCoin.address
+            );
+          await tx.wait();
+          console.info("Keeper's address approved to be used by coin join.");
+        },
+      });
     } else {
       console.info(
         "Keeper's address is already approved to be used by coin join."

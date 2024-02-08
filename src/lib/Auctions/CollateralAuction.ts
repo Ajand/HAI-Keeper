@@ -5,6 +5,8 @@ import { Collateral } from "../Collateral";
 
 import { FormatWad } from "../Math";
 
+import { TransactionQueue } from "../TransactionQueue";
+
 export interface CollateralAuctionData {
   amountToSell: ethers.BigNumber;
   amountToRaise: ethers.BigNumber;
@@ -14,6 +16,7 @@ export interface CollateralAuctionData {
 }
 
 export class CollateralAuction {
+  transactionQueue: TransactionQueue;
   id: ethers.BigNumber;
   contract: ICollateralAuctionHouse;
   safeEngine: ISAFEEngine;
@@ -25,11 +28,13 @@ export class CollateralAuction {
   auctionData: CollateralAuctionData | undefined;
 
   constructor(
+    transacationQueue: TransactionQueue,
     id: ethers.BigNumber,
     contract: ICollateralAuctionHouse,
     safeEngine: ISAFEEngine,
     collateral: Collateral
   ) {
+    this.transactionQueue = transacationQueue;
     this.id = id;
     this.contract = contract;
     this.safeEngine = safeEngine;
@@ -57,19 +62,24 @@ export class CollateralAuction {
   }
 
   async buy(amount: ethers.BigNumber) {
-    console.info(
-      `Buying ${this.collateral.tokenData.symbol} with ${FormatWad(
-        amount
-      )} system coin `
-    );
-    const tx = await this.contract.buyCollateral(this.id, amount);
-    await tx.wait();
+    this.transactionQueue.addTransaction({
+      label: "Buying Collateral",
+      task: async () => {
+        console.info(
+          `Buying ${this.collateral.tokenData.symbol} with ${FormatWad(
+            amount
+          )} system coin `
+        );
+        const tx = await this.contract.buyCollateral(this.id, amount);
+        await tx.wait();
 
-    // TODO: add more info in this log
-    console.info(
-      `Successfully bought ${this.collateral.tokenData.symbol} with ${FormatWad(
-        amount
-      )} system coin `
-    );
+        // TODO: add more info in this log
+        console.info(
+          `Successfully bought ${
+            this.collateral.tokenData.symbol
+          } with ${FormatWad(amount)} system coin `
+        );
+      },
+    });
   }
 }
