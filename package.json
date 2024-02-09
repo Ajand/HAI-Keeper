@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@ethersproject/experimental": "^5.7.0",
-    "@hai-on-op/sdk": "1.2.2-24d701f2.0",
+    "@hai-on-op/sdk": "1.2.2-1f60d23d.0",
     "@hungry-egg/rx-state": "^1.0.3",
     "arg": "^5.0.2",
     "axios": "^1.6.2",
