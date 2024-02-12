@@ -14,6 +14,7 @@ export enum QueStatus {
   IDLE,
   WORKING,
   FAILED,
+  DONE, // New status
 }
 
 export interface Transaction {
@@ -25,10 +26,15 @@ export class TransactionQueue {
   tasksSubject$: Subject<Transaction>;
   status$: BehaviorSubject<QueStatus>;
 
+  idleTimer: any; // Timer to track IDLE state duration
+  readonly IDLE_TIMEOUT = 10000; // 10 seconds
+
   constructor(retryCount: number) {
     console.info("Transaction Queue initiated");
     this.tasksSubject$ = new Subject<Transaction>();
     this.status$ = new BehaviorSubject<QueStatus>(QueStatus.IDLE);
+
+    this.idleTimer = null;
 
     this.tasksSubject$
       .pipe(
@@ -43,7 +49,9 @@ export class TransactionQueue {
       )
       .subscribe({
         next: (label) => {
+          clearTimeout(this.idleTimer); // Clear the timer on any activity
           this.status$.next(QueStatus.IDLE);
+          this.startIdleTimer();
         },
         error: (err: any) => {
           console.error(
@@ -51,12 +59,19 @@ export class TransactionQueue {
             err
           );
           this.status$.next(QueStatus.FAILED);
+          this.startIdleTimer();
         },
       });
 
     this.status$.subscribe((v) => {
       console.info(`||| Transaction Queue Status: ${QueStatus[v]}`);
     });
+  }
+
+  startIdleTimer() {
+    this.idleTimer = setTimeout(() => {
+      this.status$.next(QueStatus.DONE);
+    }, this.IDLE_TIMEOUT);
   }
 
   addTransaction(transaction: Transaction) {
