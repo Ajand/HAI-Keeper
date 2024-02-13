@@ -3,12 +3,16 @@ import { Geb } from "@hai-on-op/sdk";
 
 import { Collateral } from "../Collateral";
 
+import { TransactionQueue } from "../TransactionQueue";
+
 interface SafeInfrustructure {
+  transactionQueue: TransactionQueue;
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
 }
 
 export class Safe {
+  transactionQueue: TransactionQueue;
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
 
@@ -22,12 +26,13 @@ export class Safe {
   generatedDebt: ethers.BigNumber | undefined; // Wad
 
   constructor(
-    { provider, geb }: SafeInfrustructure,
+    { provider, geb, transactionQueue }: SafeInfrustructure,
     collateral: Collateral,
     address: string
   ) {
     this.provider = provider;
     this.geb = geb;
+    this.transactionQueue = transactionQueue;
     this.collateral = collateral;
     this.address = address;
   }
@@ -131,9 +136,9 @@ export class Safe {
       lockedCollateral,
     } = this.getCriticalAssesmentParams();
 
-    const isCrit =
-      lockedCollateral.mul(liquidationPrice) <
-      generatedDebt.mul(accumulatedRate);
+    const isCrit = lockedCollateral
+      .mul(liquidationPrice)
+      .lt(generatedDebt.mul(accumulatedRate));
 
     return isCrit;
   }
@@ -181,7 +186,7 @@ export class Safe {
   }
 
   async liquidate() {
-    if (!this.canLiquidate) {
+    if (!this.canLiquidate()) {
       throw new Error("Not liquidatable!");
     }
     //console.log(
@@ -204,7 +209,31 @@ export class Safe {
     //  (await liquidationEngine.currentOnAuctionSystemCoins()).toString()
     //);
 
+    const {
+      accumulatedRate,
+      liquidationPrice,
+      generatedDebt,
+      lockedCollateral,
+    } = this.getCriticalAssesmentParams();
+
     try {
+      /*console.log(
+        `Liquidating safe: ${this.address} - ${this.collateral.tokenData.bytes32String}`,
+        this.getCriticalityRatio(),
+        this.isCritical(),
+        accumulatedRate.toString(),
+        liquidationPrice.toString(),
+        generatedDebt.toString(),
+        lockedCollateral.toString(),
+        lockedCollateral.mul(liquidationPrice).toString(),
+        generatedDebt.mul(accumulatedRate).toString(),
+        lockedCollateral
+          .mul(liquidationPrice)
+          .lt(generatedDebt.mul(accumulatedRate)),
+        lockedCollateral.mul(liquidationPrice) <
+          generatedDebt.mul(accumulatedRate)
+      );*/
+
       const tx = await liquidationEngine.liquidateSAFE(
         this.collateral.tokenData.bytes32String,
         this.address

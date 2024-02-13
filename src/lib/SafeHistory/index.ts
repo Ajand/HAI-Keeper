@@ -3,14 +3,17 @@ import { Geb } from "@hai-on-op/sdk";
 
 import { Safe } from "../Safe";
 import { Collateral } from "../Collateral";
+import { TransactionQueue } from "../TransactionQueue";
 import { getPastSafeModifications } from "../../Keeper/EventHandlers";
 
 interface SafeInfrustructure {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
+  transactionQueue: TransactionQueue;
 }
 
 export class SafeHistory {
+  transactionQueue: TransactionQueue;
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
   collateral: Collateral;
@@ -21,10 +24,11 @@ export class SafeHistory {
   safes: Map<string, Safe> = new Map();
 
   constructor(
-    { provider, geb }: SafeInfrustructure,
+    { provider, geb, transactionQueue }: SafeInfrustructure,
     collateral: Collateral,
     from: number
   ) {
+    this.transactionQueue = transactionQueue;
     this.provider = provider;
     this.geb = geb;
     this.collateral = collateral;
@@ -55,6 +59,7 @@ export class SafeHistory {
       } else {
         const safe = new Safe(
           {
+            transactionQueue: this.transactionQueue,
             geb: this.geb,
             provider: this.provider,
           },

@@ -103,7 +103,11 @@ export class Keeper {
     this.chunkSize = Number(this.args["--chunk-size"]);
 
     this.safeHistory = new SafeHistory(
-      { provider: this.provider, geb: this.geb },
+      {
+        provider: this.provider,
+        geb: this.geb,
+        transactionQueue: this.transactionQueue,
+      },
       this.collateral,
       Number(this.args["--from-block"])
     );
@@ -144,27 +148,61 @@ export class Keeper {
     // on each block logic
     let processedBlock: number;
     let isProcessing = false;
-    fromEvent(this.provider, "block");
+
+    let isNotEnoughNativeBalanceLogged = false;
+    let isNotEnoughSystemCoinBalanceLogged = false;
+    let notBiddingLog = false;
+
+    const minNativeBalance = ethers.utils.parseEther("0.005");
+    const minSystemCoinBalance = ethers.utils.parseEther("0.1");
+
     this.provider.on("block", async () => {
+      const nativeBalance = this.nativeBalance.value$.getValue();
+      await this.getSystemCoinBalance();
+
       if (this.startupFinished) {
-        const currentBlockNumber = await this.provider.getBlockNumber();
-        if (processedBlock !== currentBlockNumber && !isProcessing) {
-          isProcessing = true;
-          try {
-            if (this.isLiquidating) {
-              this.checkSafes();
-            }
-            if (this.collateralAuctionHouse.loaded) {
-              await this.collateralAuctionHouse.reloadState();
-            }
-          } catch (err) {
-            console.error(err);
+        if (nativeBalance && nativeBalance.lt(minNativeBalance)) {
+          // not enough native balance flow
+          if (!isNotEnoughNativeBalanceLogged) {
+            console.warn(
+              `Native balance of the system is less than minimum needed. Keeper will stop it's operation `
+            );
+            isNotEnoughNativeBalanceLogged = true;
           }
+        } else {
+          // normal flow
+          const currentBlockNumber = await this.provider.getBlockNumber();
+          if (processedBlock !== currentBlockNumber && !isProcessing) {
+            isProcessing = true;
+            try {
+              if (this.isLiquidating) {
+                this.checkSafes();
+              }
+              if (this.collateralAuctionHouse.loaded) {
+                await this.collateralAuctionHouse.reloadState();
+                isNotEnoughNativeBalanceLogged = false;
+              }
+            } catch (err) {
+              console.error(err);
+            }
 
-          processedBlock = await this.provider.getBlockNumber();
-          isProcessing = false;
+            processedBlock = await this.provider.getBlockNumber();
+            isProcessing = false;
 
-          this.handleBidding();
+            if (!this.isBidding) {
+              console.warn(`This keeper will not participate in auctions.`);
+              notBiddingLog = true;
+            } else if (this.coinBalance.gt(minSystemCoinBalance)) {
+              notBiddingLog = false;
+              isNotEnoughSystemCoinBalanceLogged = false;
+              this.handleBidding();
+            } else if (!isNotEnoughSystemCoinBalanceLogged) {
+              console.warn(
+                `System coin balance of the system is less than minimum needed. Keeper will stop bidding `
+              );
+              isNotEnoughSystemCoinBalanceLogged = true;
+            }
+          }
         }
       }
     });
@@ -417,16 +455,19 @@ export class Keeper {
   //}
 
   async handleBidding() {
-    if (this.isBidding) {
-      await this.collateralAuctionHouse.handleAuctionsState();
+    await this.collateralAuctionHouse.handleAuctionsState();
 
-      const auctions = this.collateralAuctionHouse.auctions;
+    const auctions = this.collateralAuctionHouse.auctions;
 
-      for (const auction of auctions) {
-        if (!auction.deleted) {
-          // This random sleep helps in nonce manager
-          await sleep(Math.floor(Math.random() * 1000 * 2));
-          await this.getSystemCoinBalance();
+    // Must add proper money management tool
+    for (const auction of auctions) {
+      if (!auction.deleted) {
+        await this.getSystemCoinBalance();
+        if (this.coinBalance.eq(0)) {
+          console.warn(
+            `Our system coin balance is zero. There is an opportunity to buy collateral but we can not bid.`
+          );
+        } else {
           await auction.buy(WadFromRad(this.coinBalance));
           await auction.reload();
         }
