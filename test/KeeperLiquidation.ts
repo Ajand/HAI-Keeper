@@ -16,6 +16,21 @@ const ALL_ARGS_KEY_VALUE = {
   ...REQUIRED_ARGS_KEY_VALUE,
 };
 
+/*
+
+const desiredError= "0x660f68af"
+
+    Object.entries(geb.contracts).forEach((contract) => {
+      try {
+        const parsedError = contract[1].interface.parseError(desiredError);
+        console.log("parsed error is: ", parsedError);
+      } catch (err) {
+        console.log(`can't find the error in ${contract[0]}`);
+      }
+    });
+
+*/
+
 describe("Keeper Liquidation", () => {
   beforeEach(async function () {});
 
@@ -35,6 +50,17 @@ describe("Keeper Liquidation", () => {
         provider: provider,
       }
     );
+
+    const desiredError = "0x660f68af";
+
+    Object.entries(geb.contracts).forEach((contract) => {
+      try {
+        const parsedError = contract[1].interface.parseError(desiredError);
+        console.log("parsed error is: ", parsedError);
+      } catch (err) {
+        console.log(`can't find the error in ${contract[0]}`);
+      }
+    });
 
     await provider.send("hardhat_setBalance", [
       keeper.signer.address,
