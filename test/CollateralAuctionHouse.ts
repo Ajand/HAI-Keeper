@@ -91,6 +91,8 @@ describe("Auction House Tests", () => {
 
     await auctionHouse.auctions[0].buy(WadFromRad(keeper.coinBalance));
 
+    await sleep(500);
+
     expect(auctionData.amountToSell).to.be.equal(await getCollateralBalance());
   });
 });

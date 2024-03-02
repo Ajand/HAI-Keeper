@@ -83,6 +83,8 @@ describe("Shutting down the keeper", () => {
 
     await keeper.shutdown();
 
+    await sleep(1000);
+
     expect(await getCollateralBalance()).to.be.equal(0);
   });
 

@@ -33,56 +33,56 @@ The Keepers get develop in 4 phases.
 4.  Adding surplus and debt auctions
 
 - [ ] Main Module
-  - [ ] Initializer
-    - [ ] Configure Auction Contracts
+  - [x] Initializer
+    - [x] Configure Auction Contracts
     - [ ] Setup Gas Strategy
     - [ ] Configure accounts for which we'll settle auctions
     - [x] Parsing Args
     - [x] Configure Provider and Signer
-    - [] Configure Core Contracts
-  - [ ] Main
+    - [x] Configure Core Contracts
+  - [x] Main
     - [ ] Sequencer
-    - [ ] Lifecycle Handler
-  - [ ] Startup
+    - [x] Lifecycle Handler
+  - [x] Startup
     - [ ] Plunge
-    - [ ] Approvals
+    - [x] Approvals
     - [ ] Rebalancing
-    - [ ] Logging important informations
-  - [ ] Approvals
+    - [x] Logging important informations
+  - [x] Approvals
     - [ ] Flash swap approvals
-    - [ ] Strategy Approval
-    - [ ] CoinJoin Approval
+    - [x] Strategy Approval
+    - [x] CoinJoin Approval
   - [ ] Plunge: Cancel the pending transactions
-  - [ ] Shutdown
-    - [ ] Exit system coin if needed
-    - [ ] Exit collateral if needed
+  - [x] Shutdown
+    - [x] Exit system coin if needed
+    - [x] Exit collateral if needed
     - [ ] Swap collateral for system coin if needed
-  - [ ] Exit system coin on shut down
+  - [x] Exit system coin on shut down
   - [ ] Auction handled by this shard
-  - [ ] Check Safes
-    - [ ] Check if auction is finished or not
-    - [ ] If needed settle auction with flash proxy
-  - [ ] Handle discount bid
+  - [x] Check Safes
+    - [x] Check if auction is finished or not
+    - [x] If needed settle auction with flash proxy
+  - [x] Handle discount bid
   - [ ] Rebalance system coin
-  - [ ] Check all auctions
-    - [ ] Check if auction is finished or not
+  - [x] Check all auctions
+    - [x] Check if auction is finished or not
     - [ ] If needed settle auction with flash proxy
-  - [ ] Check for bids
-  - [ ] Check Auction
-  - [ ] Handle discount bid
+  - [x] Check for bids
+  - [x] Check Auction
+  - [x] Handle discount bid
   - [ ] Rebalance system coin
-  - [ ] Join system coin
-  - [ ] Exit collateral
-  - [ ] handle bid
+  - [x] Join system coin
+  - [x] Exit collateral
+  - [x] handle bid
 - [ ] Gas price module
   - [ ] Updatable gas price
   - [ ] Dynamic gas price
-- [ ] Logic module
-  - [ ] Auction
-  - [ ] Auctions
+- [x] Logic module
+  - [x] Auction
+  - [x] Auctions
   - [ ] Reservoir
-- [ ] Safe History
-  - [ ] get safes
+- [x] Safe History
+  - [x] get safes
 - [ ] Strategy
-  - [ ] Fixed discount collateral auction stratetgy
+  - [x] Fixed discount collateral auction stratetgy
   - [ ] Increasing discount collateral auction strategy
