@@ -6,7 +6,7 @@ import {
 } from "../DelayedOracleManipulator";
 
 export const gebUtils = (wallet: ethers.Wallet) => {
-  const geb = new Geb("optimism-goerli", wallet);
+  const geb = new Geb("optimism-sepolia", wallet);
 
   const getWethOracle = async () => {
     const wethByteString = geb.tokenList.WETH.bytes32String;
@@ -59,6 +59,9 @@ export const gebUtils = (wallet: ethers.Wallet) => {
     haiAmount: string | number
   ) => {
     const proxy = await getProxy();
+
+    console.log("Proxy is: ", proxy.proxyAddress);
+
     await getWethAndApprove(collateralAmount, proxy.proxyAddress);
 
     try {
@@ -67,6 +70,7 @@ export const gebUtils = (wallet: ethers.Wallet) => {
         collateralAmount,
         haiAmount
       );
+
       const tx = await wallet.sendTransaction({ ...pop });
       const receipt = await tx.wait();
 

@@ -2,6 +2,8 @@ import axios from "axios";
 
 import type { ChainlinkPriceFeedApiResponse } from "../chainlink-data-types";
 
+import OptimismSepolia from "./optimism-sepolia.json";
+
 const CHAINLINK_DOCS_CONSTANTS = {
   ETHEREUM_ADDRESSES_ENDPOINT:
     "https://cl-docs-addresses.web.app/addresses.json",
@@ -60,13 +62,13 @@ export = {
     }
   },
   getOptimismProxiesForNetwork: async function getOptimismPriceFeeds(
-    network = "Optimism Goerli"
+    network = "Optimism Sepolia"
   ) {
     try {
-      const priceFeedPayload = await axios.get<any>(
-        "https://cl-docs-addresses.web.app/addresses.json"
-      );
-      const priceFeedData = priceFeedPayload.data;
+      //const priceFeedPayload =  /*await axios.get<any>(
+      //"https://cl-docs-addresses.web.app/addresses.json"
+      //);*/
+      const priceFeedData = OptimismSepolia; //priceFeedPayload.data;
 
       const optimismPriceFeed = priceFeedData["optimism"];
 
@@ -74,6 +76,9 @@ export = {
         (n: any) => n.name === network
       );
       const proxies = foundNetwork.proxies;
+
+      console.log(proxies);
+
       return proxies;
     } catch (e) {
       throw new Error(`Failed to fetch all price feeds...[${e}]`);

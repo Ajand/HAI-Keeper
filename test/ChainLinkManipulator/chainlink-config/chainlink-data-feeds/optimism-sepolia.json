@@ -1,0 +1,36 @@
+{
+  "optimism": {
+    "title": "Optimism Data Feeds",
+    "networkStatusUrl": "https://status.optimism.io/",
+    "networks": [
+      {
+        "name": "Optimism Sepolia",
+        "url": "https://sepolia-optimism.etherscan.io/address/%s",
+        "dataType": "default",
+        "networkType": "testnet",
+        "proxies": [
+          {
+            "pair": "1INCH / USD",
+            "assetName": "1inch",
+            "deviationThreshold": 0.5,
+            "heartbeat": "24h",
+            "decimals": 8,
+            "proxy": "0xd94522a6feF7779f672f4C88eb672da9222f2eAc",
+            "feedCategory": "verified",
+            "feedType": "Crypto"
+          },
+          {
+            "pair": "ETH / USD",
+            "assetName": "1inch",
+            "deviationThreshold": 0.2,
+            "heartbeat": "20m",
+            "decimals": 8,
+            "proxy": "0x61Ec26aA57019C486B10502285c5A3D4A4750AD7",
+            "feedCategory": "verified",
+            "feedType": "Crypto"
+          }
+        ]
+      }
+    ]
+  }
+}

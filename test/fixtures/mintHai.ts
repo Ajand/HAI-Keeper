@@ -18,7 +18,7 @@ export async function mintHai() {
   const { openSafeAndGenerateDebt, geb, getUserHaiBalance } = gebUtilsResult;
 
   const collateralAmount = ethers.utils.parseEther("5").toHexString();
-  const haiAmount = ethers.utils.parseEther("7500").toHexString();
+  const haiAmount = ethers.utils.parseEther("7300").toHexString();
 
   await openSafeAndGenerateDebt(collateralAmount, haiAmount);
 

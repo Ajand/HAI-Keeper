@@ -31,7 +31,7 @@ describe("Auction Participation", () => {
     const safeEngine = geb.contracts.safeEngine;
 
     const collateralAmount = ethers.utils.parseEther("5").toHexString();
-    const haiAmount = ethers.utils.parseEther("7500").toHexString();
+    const haiAmount = ethers.utils.parseEther("7300").toHexString();
     const safeHaiAmount = ethers.utils.parseEther("1000").toHexString();
 
     const safe = await openSafeAndGenerateDebt(collateralAmount, safeHaiAmount);

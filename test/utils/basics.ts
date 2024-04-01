@@ -9,7 +9,7 @@ function removeZerosAfterX(hexString: string) {
 }
 
 export const getProvider = () => {
-  return new ethers.providers.JsonRpcProvider("http://localhost:8545");
+  return new ethers.providers.JsonRpcProvider("http://127.0.0.1:8545/");
 };
 
 export const mineBlocks = async (blocks: number) => {

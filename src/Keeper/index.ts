@@ -77,7 +77,7 @@ export class Keeper {
 
     this.signer = wallet.connect(this.provider);
 
-    const testingNetwork = "optimism-goerli";
+    const testingNetwork = "optimism-sepolia";
     const network = this.args["--network"];
     if (network) {
       this.geb = new Geb(network, this.signer);
