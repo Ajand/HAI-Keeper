@@ -77,8 +77,6 @@ export = {
       );
       const proxies = foundNetwork.proxies;
 
-      console.log(proxies);
-
       return proxies;
     } catch (e) {
       throw new Error(`Failed to fetch all price feeds...[${e}]`);

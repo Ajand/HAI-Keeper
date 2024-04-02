@@ -3,6 +3,7 @@ import "dotenv/config";
 import { expect } from "chai";
 import hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { TransactionQueue } from "../src/lib/TransactionQueue";
 
 import { mintHai } from "./fixtures";
 import { changeCollateralPrice, resetNetwork } from "./utils";
@@ -19,6 +20,8 @@ describe("Safe class", () => {
     const startingBlock = Number(process.env.FORK_BLOCK_NUMBER);
     const endBlock = (await provider.getBlock("latest")).number;
 
+    const queue = new TransactionQueue(5);
+
     const wethCollateral = new Collateral(
       { provider, geb },
       geb.tokenList.WETH
@@ -34,7 +37,7 @@ describe("Safe class", () => {
     );
 
     const safe = new Safe(
-      { provider, geb },
+      { provider, geb, transactionQueue: queue },
       wethCollateral,
       pastModifications[0].args._safe
     );
@@ -68,12 +71,11 @@ describe("Safe class", () => {
       const { safe, provider, wethCollateral, geb, fixtureWallet } =
         await basicFixture();
 
-      await changeCollateralPrice(150000000000, 105000000000, wethCollateral)(
-        hre,
-        provider,
-        fixtureWallet,
-        geb
-      );
+      await changeCollateralPrice(
+        "1500000000000000000000",
+        "1000000000000000000000",
+        wethCollateral
+      )(hre, provider, fixtureWallet, geb);
 
       expect(safe.getCriticalityRatio()).to.be.lessThanOrEqual(1);
       expect(safe.isCritical()).to.be.true;
@@ -83,12 +85,11 @@ describe("Safe class", () => {
       const { safe, provider, wethCollateral, geb, fixtureWallet } =
         await basicFixture();
 
-      await changeCollateralPrice(250000000000, 255000000000, wethCollateral)(
-        hre,
-        provider,
-        fixtureWallet,
-        geb
-      );
+      await changeCollateralPrice(
+        "2500000000000000000000",
+        "2200000000000000000000",
+        wethCollateral
+      )(hre, provider, fixtureWallet, geb);
 
       expect(safe.getCriticalityRatio()).to.be.greaterThan(1);
       expect(safe.isCritical()).to.be.false;
@@ -100,12 +101,11 @@ describe("Safe class", () => {
       const { safe, provider, wethCollateral, geb, fixtureWallet } =
         await basicFixture();
 
-      await changeCollateralPrice(150000000000, 105000000000, wethCollateral)(
-        hre,
-        provider,
-        fixtureWallet,
-        geb
-      );
+      await changeCollateralPrice(
+        "1500000000000000000000",
+        "1000000000000000000000",
+        wethCollateral
+      )(hre, provider, fixtureWallet, geb);
 
       expect(safe.isCritical()).to.be.true;
 
