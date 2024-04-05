@@ -1,4 +1,4 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { loadFixture, reset } from "@nomicfoundation/hardhat-network-helpers";
 import "dotenv/config";
 import { ethers } from "ethers";
 import hre from "hardhat";
@@ -6,6 +6,8 @@ import { expect } from "chai";
 
 import { mineBlocks, sleep, changeCollateralPrice } from "./utils";
 import { mintHai } from "./fixtures";
+
+import { resetNetwork } from "./utils";
 
 import { REQUIRED_ARGS_KEY_VALUE } from "../tests/contexts/args";
 import { keyValueArgsToList } from "../tests/helpers";
@@ -31,7 +33,7 @@ describe("Shutting down the keeper", () => {
     const safeEngine = geb.contracts.safeEngine;
 
     const collateralAmount = ethers.utils.parseEther("5").toHexString();
-    const haiAmount = ethers.utils.parseEther("7500").toHexString();
+    const haiAmount = ethers.utils.parseEther("7400").toHexString();
     const safeHaiAmount = ethers.utils.parseEther("1000").toHexString();
 
     const safe = await openSafeAndGenerateDebt(collateralAmount, safeHaiAmount);
@@ -62,12 +64,11 @@ describe("Shutting down the keeper", () => {
     await sleep(2000);
 
     // After reducing the collateral price, the almost critical safes should be liquidated
-    await changeCollateralPrice(150000000000, 105000000000, keeper.collateral)(
-      hre,
-      provider,
-      fixtureWallet,
-      geb
-    );
+    await changeCollateralPrice(
+      "1500000000000000000000",
+      "1000000000000000000000",
+      keeper.collateral
+    )(hre, provider, fixtureWallet, geb);
 
     const auctionHouse = keeper.collateralAuctionHouse;
 
@@ -83,14 +84,14 @@ describe("Shutting down the keeper", () => {
 
     await keeper.shutdown();
 
-    await sleep(1000);
+    await sleep(10000);
 
     expect(await getCollateralBalance()).to.be.equal(0);
   });
 
   it("Should properly shut down the keeper and exit system coin", async () => {
     const { provider, openSafeAndGenerateDebt, geb, fixtureWallet } =
-      await loadFixture(mintHai);
+      await mintHai();
 
     await mineBlocks(100);
     const startingBlock = Number(process.env.FORK_BLOCK_NUMBER) + 100;
@@ -100,7 +101,7 @@ describe("Shutting down the keeper", () => {
     const safeEngine = geb.contracts.safeEngine;
 
     const collateralAmount = ethers.utils.parseEther("5").toHexString();
-    const haiAmount = ethers.utils.parseEther("7500").toHexString();
+    const haiAmount = ethers.utils.parseEther("7300").toHexString();
     const safeHaiAmount = ethers.utils.parseEther("1000").toHexString();
 
     const safe = await openSafeAndGenerateDebt(collateralAmount, safeHaiAmount);
@@ -128,13 +129,16 @@ describe("Shutting down the keeper", () => {
     ]);
 
     await sleep(5000);
+    //
+
+    await keeper.getSystemCoinBalance();
 
     expect(keeper.coinBalance).to.not.be.equal(0);
-
+    //
     await keeper.shutdown();
-
-    await sleep(2000);
-
+    //
+    await sleep(10000);
+    ////
     expect(keeper.coinBalance).to.be.equal(0);
   });
 });

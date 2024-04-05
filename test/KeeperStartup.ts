@@ -63,7 +63,7 @@ describe("Keeper startup logic", () => {
     const safeEngine = geb.contracts.safeEngine;
 
     const collateralAmount = ethers.utils.parseEther("5").toHexString();
-    const haiAmount = ethers.utils.parseEther("7500").toHexString();
+    const haiAmount = ethers.utils.parseEther("7200").toHexString();
 
     const safe1 = await openSafeAndGenerateDebt(collateralAmount, haiAmount);
 

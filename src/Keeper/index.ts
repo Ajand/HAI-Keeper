@@ -58,6 +58,8 @@ export class Keeper {
   isBidding: boolean;
   isLiquidating: boolean;
 
+  isExiting: boolean = false;
+
   keepSystemCoinInSafeEngine: boolean;
   keepCollateralInSafeEngine: boolean;
 
@@ -160,7 +162,7 @@ export class Keeper {
       const nativeBalance = this.nativeBalance.value$.getValue();
       await this.getSystemCoinBalance();
 
-      if (this.startupFinished) {
+      if (this.startupFinished && !this.isExiting) {
         if (nativeBalance && nativeBalance.lt(minNativeBalance)) {
           // not enough native balance flow
           if (!isNotEnoughNativeBalanceLogged) {
@@ -239,6 +241,7 @@ export class Keeper {
 
   async shutdown() {
     console.info("Shutting down the keeper");
+    this.isExiting = true;
     if (!this.keepCollateralInSafeEngine) {
       console.info("Keeper is set up to exit collateral on shutdown");
       await this.exitCollateral();
@@ -320,11 +323,12 @@ export class Keeper {
       this.collateral.tokenData.collateralJoin,
       this.signer
     );
-    await this.getCollateralBalance();
 
     this.transactionQueue.addTransaction({
       label: "Collateral Exit",
       task: async () => {
+        await this.getCollateralBalance();
+
         console.info("Exiting the collateral from the coin join.");
         const tx = await collateralJoin.exit(
           this.signer.address,
@@ -342,11 +346,12 @@ export class Keeper {
   async exitSystemCoin() {
     const joinCoin = this.geb.contracts.joinCoin;
     await this.handleSafeApprovalForExit();
-    await this.getSystemCoinBalance();
 
     this.transactionQueue.addTransaction({
       label: "System coin exit",
       task: async () => {
+        await this.getSystemCoinBalance();
+
         console.info("Exiting the system coins from the coin join.");
         const tx = await joinCoin.exit(
           this.signer.address,
@@ -411,6 +416,7 @@ export class Keeper {
   }
 
   async checkSafes() {
+    console.log("checking safe ....");
     if (this.collateral.initialized) {
       await this.collateral.updateInfo();
     } else {
@@ -423,7 +429,6 @@ export class Keeper {
 
     for (const safe of safesArray) {
       if (safe.canLiquidate()) {
-        console.info("can liquidate safe: ", safe.address);
         try {
           const receipt = await safe.liquidate();
 

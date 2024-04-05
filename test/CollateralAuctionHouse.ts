@@ -31,7 +31,7 @@ describe("Auction House Tests", () => {
     const safeEngine = geb.contracts.safeEngine;
 
     const collateralAmount = ethers.utils.parseEther("5").toHexString();
-    const haiAmount = ethers.utils.parseEther("7500").toHexString();
+    const haiAmount = ethers.utils.parseEther("7400").toHexString();
     const safeHaiAmount = ethers.utils.parseEther("1000").toHexString();
 
     const safe = await openSafeAndGenerateDebt(collateralAmount, safeHaiAmount);
@@ -62,12 +62,11 @@ describe("Auction House Tests", () => {
     await sleep(2000);
 
     // After reducing the collateral price, the almost critical safes should be liquidated
-    await changeCollateralPrice(150000000000, 105000000000, keeper.collateral)(
-      hre,
-      provider,
-      fixtureWallet,
-      geb
-    );
+    await changeCollateralPrice(
+      "1500000000000000000000",
+      "1000000000000000000000",
+      keeper.collateral
+    )(hre, provider, fixtureWallet, geb);
 
     await sleep(2000);
 

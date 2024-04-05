@@ -62,12 +62,11 @@ describe("Auction Participation", () => {
     await sleep(2000);
 
     // After reducing the collateral price, the almost critical safes should be liquidated
-    await changeCollateralPrice(150000000000, 105000000000, keeper.collateral)(
-      hre,
-      provider,
-      fixtureWallet,
-      geb
-    );
+    await changeCollateralPrice(
+      "1500000000000000000000",
+      "1000000000000000000000",
+      keeper.collateral
+    )(hre, provider, fixtureWallet, geb);
 
     const auctionHouse = keeper.collateralAuctionHouse;
 

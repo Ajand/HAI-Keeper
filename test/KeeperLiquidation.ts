@@ -68,7 +68,7 @@ describe("Keeper Liquidation", () => {
     ]);
 
     const collateralAmount = ethers.utils.parseEther("5").toHexString();
-    const haiAmount = ethers.utils.parseEther("7500").toHexString();
+    const haiAmount = ethers.utils.parseEther("7400").toHexString();
     const safeHaiAmount = ethers.utils.parseEther("1000").toHexString();
 
     await sleep(2000);
@@ -101,12 +101,11 @@ describe("Keeper Liquidation", () => {
     await sleep(2000);
 
     // After reducing the collateral price, the almost critical safes should be liquidated
-    await changeCollateralPrice(150000000000, 105000000000, keeper.collateral)(
-      hre,
-      provider,
-      fixtureWallet,
-      geb
-    );
+    await changeCollateralPrice(
+      "1500000000000000000000",
+      "1000000000000000000000",
+      keeper.collateral
+    )(hre, provider, fixtureWallet, geb);
 
     await sleep(5000);
 
@@ -154,7 +153,7 @@ describe("Keeper Liquidation", () => {
     ]);
 
     const collateralAmount = ethers.utils.parseEther("5").toHexString();
-    const haiAmount = ethers.utils.parseEther("7500").toHexString();
+    const haiAmount = ethers.utils.parseEther("7400").toHexString();
     const safeHaiAmount = ethers.utils.parseEther("1000").toHexString();
 
     await sleep(2000);
@@ -187,12 +186,11 @@ describe("Keeper Liquidation", () => {
     await sleep(2000);
 
     // After reducing the collateral price, the almost critical safes should be liquidated
-    await changeCollateralPrice(150000000000, 105000000000, keeper.collateral)(
-      hre,
-      provider,
-      fixtureWallet,
-      geb
-    );
+    await changeCollateralPrice(
+      "1500000000000000000000",
+      "1000000000000000000000",
+      keeper.collateral
+    )(hre, provider, fixtureWallet, geb);
 
     await sleep(5000);
 
