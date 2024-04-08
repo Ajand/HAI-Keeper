@@ -3,12 +3,11 @@ import { ICollateralAuctionHouse } from "@hai-on-op/sdk/lib/typechained/ICollate
 import { ISAFEEngine } from "@hai-on-op/sdk/lib/typechained/ISAFEEngine.js";
 import { Collateral } from "../Collateral";
 import { Logger } from "pino";
+import logger from "../logger";
 
 import { FormatWad } from "../Math";
 
 import { TransactionQueue } from "../TransactionQueue";
-
-import logger from "../logger";
 
 export interface CollateralAuctionData {
   amountToSell: ethers.BigNumber;
