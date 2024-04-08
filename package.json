@@ -40,6 +40,7 @@
     "typescript": ">=4.5.0"
   },
   "dependencies": {
+    "@elastic/ecs-pino-format": "^1.5.0",
     "@ethersproject/experimental": "^5.7.0",
     "@hai-on-op/sdk": "1.2.3",
     "@hungry-egg/rx-state": "^1.0.3",
@@ -47,6 +48,7 @@
     "axios": "^1.6.2",
     "dotenv": "^16.3.1",
     "keythereum": "^2.0.0",
+    "pino": "^8.20.0",
     "rxjs": "^7.8.1"
   }
 }

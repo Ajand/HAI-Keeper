@@ -2,10 +2,13 @@ import { ethers } from "ethers";
 import { ICollateralAuctionHouse } from "@hai-on-op/sdk/lib/typechained/ICollateralAuctionHouse.js";
 import { ISAFEEngine } from "@hai-on-op/sdk/lib/typechained/ISAFEEngine.js";
 import { Collateral } from "../Collateral";
+import { Logger } from "pino";
 
 import { FormatWad } from "../Math";
 
 import { TransactionQueue } from "../TransactionQueue";
+
+import logger from "../logger";
 
 export interface CollateralAuctionData {
   amountToSell: ethers.BigNumber;
@@ -27,6 +30,8 @@ export class CollateralAuction {
   initiated: boolean = false;
   auctionData: CollateralAuctionData | undefined;
 
+  log: Logger;
+
   constructor(
     transacationQueue: TransactionQueue,
     id: ethers.BigNumber,
@@ -39,16 +44,55 @@ export class CollateralAuction {
     this.contract = contract;
     this.safeEngine = safeEngine;
     this.collateral = collateral;
+
+    // Create a child logger for this module
+    this.log = logger.child({
+      module: "CollateralAuction",
+      id: this.id,
+      contract: contract.address,
+      collateral: this.collateral.tokenData.symbol,
+    });
   }
 
   async init() {
-    console.log(this.id);
-    this.auctionData = await this.contract.auctions(this.id);
-    this.initiated = true;
+    try {
+      this.log.debug({
+        message: "Initializing Collateral Auction",
+        auctionId: this.id.toString(),
+      });
+      this.auctionData = await this.contract.auctions(this.id);
+      this.initiated = true;
+      this.log.debug({
+        message: "Collateral Auction initialized successfully",
+        auctionData: this.auctionData,
+      });
+    } catch (error) {
+      this.log.error({
+        message: "Error initializing Collateral Auction",
+        error: error,
+      });
+      throw error;
+    }
   }
 
   async reload() {
-    this.auctionData = await this.contract.auctions(this.id);
+    try {
+      this.log.debug({
+        message: "Reloading Collateral Auction data",
+        auctionId: this.id.toString(),
+      });
+      this.auctionData = await this.contract.auctions(this.id);
+      this.log.debug({
+        message: "Collateral Auction data reloaded successfully",
+        auctionData: this.auctionData,
+      });
+    } catch (error) {
+      this.log.error({
+        message: "Error reloading Collateral Auction data",
+        error: error,
+      });
+      throw error;
+    }
   }
 
   public get deleted(): boolean {
@@ -62,24 +106,34 @@ export class CollateralAuction {
   }
 
   async buy(amount: ethers.BigNumber) {
-    this.transactionQueue.addTransaction({
-      label: "Buying Collateral",
-      task: async () => {
-        console.info(
-          `Buying ${this.collateral.tokenData.symbol} with ${FormatWad(
-            amount
-          )} system coin `
-        );
-        const tx = await this.contract.buyCollateral(this.id, amount);
-        await tx.wait();
+    try {
+      this.transactionQueue.addTransaction({
+        label: "Buying Collateral",
+        task: async () => {
+          this.log.debug({
+            message: `Buying ${
+              this.collateral.tokenData.symbol
+            } with ${FormatWad(amount)} system coin`,
+            auctionId: this.id.toString(),
+          });
+          const tx = await this.contract.buyCollateral(this.id, amount);
+          await tx.wait();
 
-        // TODO: add more info in this log
-        console.info(
-          `Successfully bought ${
-            this.collateral.tokenData.symbol
-          } with ${FormatWad(amount)} system coin `
-        );
-      },
-    });
+          // TODO: add more info in this log
+          this.log.info({
+            message: `Successfully bought ${
+              this.collateral.tokenData.symbol
+            } with ${FormatWad(amount)} system coin`,
+            auctionId: this.id.toString(),
+          });
+        },
+      });
+    } catch (error) {
+      this.log.error({
+        message: "Error buying collateral",
+        error: error,
+      });
+      throw error;
+    }
   }
 }
