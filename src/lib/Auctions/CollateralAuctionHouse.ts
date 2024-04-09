@@ -113,6 +113,12 @@ export class CollateralAuctionHouse {
   async handleAuctionsState() {
     try {
       const auctionsStarted = await this.contract.auctionsStarted();
+      this.log.debug({
+        message: "Handling auctions state",
+        auctionsStarted: auctionsStarted.toNumber(),
+        existingAuctions: this.auctions.length,
+      });
+
       if (auctionsStarted.toNumber() !== this.auctions.length) {
         const notFollowedActionsIds = Array(
           auctionsStarted.toNumber() - this.auctions.length
@@ -122,7 +128,19 @@ export class CollateralAuctionHouse {
             return ethers.BigNumber.from(this.auctions.length + i + 1);
           });
 
+        this.log.debug({
+          message: "Detected new auctions",
+          newAuctionIds: notFollowedActionsIds.map((auctionId) =>
+            auctionId.toString()
+          ),
+        });
+
         for (const auctionId of notFollowedActionsIds) {
+          this.log.debug({
+            message: "Initializing new auction",
+            auctionId: auctionId.toString(),
+          });
+
           const auction = new CollateralAuction(
             this.transactionQueue,
             auctionId,
@@ -132,11 +150,23 @@ export class CollateralAuctionHouse {
           );
           await auction.init();
           this.auctions.push(auction);
+          this.log.debug({
+            message: "New auction initialized",
+            auctionId: auctionId.toString(),
+          });
         }
 
         for (const auction of this.auctions) {
           if (auction.initiated && !auction.deleted) {
+            this.log.debug({
+              message: "Reloading existing auction",
+              auctionId: auction.id.toString(),
+            });
             await auction.reload();
+            this.log.debug({
+              message: "Existing auction reloaded",
+              auctionId: auction.id.toString(),
+            });
           }
         }
       }
