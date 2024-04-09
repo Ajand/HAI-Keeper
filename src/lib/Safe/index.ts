@@ -5,6 +5,9 @@ import { Collateral } from "../Collateral";
 
 import { TransactionQueue } from "../TransactionQueue";
 
+import { Logger } from "pino";
+import logger from "../logger";
+
 interface SafeInfrustructure {
   transactionQueue: TransactionQueue;
   provider: ethers.providers.JsonRpcProvider;
@@ -25,6 +28,8 @@ export class Safe {
   lockedCollateral: ethers.BigNumber | undefined; // Wad
   generatedDebt: ethers.BigNumber | undefined; // Wad
 
+  log: Logger;
+
   constructor(
     { provider, geb, transactionQueue }: SafeInfrustructure,
     collateral: Collateral,
@@ -35,116 +40,195 @@ export class Safe {
     this.transactionQueue = transactionQueue;
     this.collateral = collateral;
     this.address = address;
+
+    // Create a child logger for Safe class with constructor parameters
+    this.log = logger.child({
+      module: "Safe",
+      collateralSymbol: this.collateral.tokenData.symbol,
+      address: this.address,
+    });
+
+    // Log debug message for initialization
+    this.log.debug("Safe module initialized");
   }
 
   async init() {
     try {
+      this.log.debug("Initializing safe...");
       await this.getSafeInfo();
       this.initialized = true;
-    } catch (err) {
-      console.error(err);
+      this.log.debug("Safe initialized successfully");
+    } catch (error) {
+      this.log.error("Error initializing safe", { error });
+      throw error;
     }
   }
 
   async updateInfo() {
     try {
+      this.log.debug("Updating safe info...");
       await this.getSafeInfo();
-    } catch (err) {
-      console.error(err);
+      this.log.debug("Safe info updated");
+    } catch (error) {
+      this.log.error("Error updating safe info", { error });
+      throw error;
     }
   }
 
   async getSafeInfo() {
     try {
+      this.log.debug("Fetching safe params...");
       await this.getSafeParams();
-    } catch (err) {
-      console.error(err);
+      this.log.debug("Safe params fetched");
+    } catch (error) {
+      this.log.error("Error fetching safe params", { error });
+      throw error;
     }
   }
 
   async getSafeParams() {
-    const safeParams = await this.geb.contracts.safeEngine.safes(
-      this.collateral.tokenData.bytes32String,
-      this.address
-    );
-    this.lockedCollateral = safeParams.lockedCollateral;
-    this.generatedDebt = safeParams.generatedDebt;
+    try {
+      this.log.debug("Fetching safe params from Geb contract...");
+      const safeParams = await this.geb.contracts.safeEngine.safes(
+        this.collateral.tokenData.bytes32String,
+        this.address
+      );
+      this.lockedCollateral = safeParams.lockedCollateral;
+      this.generatedDebt = safeParams.generatedDebt;
+      this.log.debug("Safe params fetched successfully", {
+        lockedCollateral: this.lockedCollateral?.toString(),
+        generatedDebt: this.generatedDebt?.toString(),
+      });
+    } catch (error) {
+      this.log.error("Error fetching safe params", { error });
+      throw error;
+    }
   }
 
   async getSafeEngineParams() {}
 
   getNormalizedInfo() {
-    if (this.generatedDebt && this.lockedCollateral) {
-      const lockedCollateral = ethers.utils.formatUnits(
-        this.lockedCollateral,
-        18
-      );
-      const generatedDebt = ethers.utils.formatUnits(this.generatedDebt, 18);
+    try {
+      if (this.generatedDebt && this.lockedCollateral) {
+        const lockedCollateral = ethers.utils.formatUnits(
+          this.lockedCollateral,
+          18
+        );
+        const generatedDebt = ethers.utils.formatUnits(this.generatedDebt, 18);
 
-      return {
-        lockedCollateral,
-        generatedDebt,
-      };
-    } else {
-      throw new Error("not initialized yet.");
+        this.log.debug("Normalized info fetched successfully", {
+          lockedCollateral,
+          generatedDebt,
+        });
+
+        return {
+          lockedCollateral,
+          generatedDebt,
+        };
+      } else {
+        this.log.error("Safe not initialized yet.");
+        throw new Error("Safe not initialized yet.");
+      }
+    } catch (error) {
+      this.log.error("Error fetching normalized info", { error });
+      throw error;
     }
   }
 
   getCriticalAssesmentParams() {
-    const accumulatedRate = this.collateral.accumulatedRate;
-    const liquidationPrice = this.collateral.liquidationPrice;
+    try {
+      const accumulatedRate = this.collateral.accumulatedRate;
+      const liquidationPrice = this.collateral.liquidationPrice;
 
-    if (!accumulatedRate || !liquidationPrice) {
-      throw new Error("Collateral is not initialized.");
+      if (!accumulatedRate || !liquidationPrice) {
+        this.log.error("Collateral is not initialized.");
+        throw new Error("Collateral is not initialized.");
+      }
+
+      if (!this.generatedDebt || !this.lockedCollateral) {
+        this.log.error("Safe is not initialized!");
+        throw new Error("Safe is not initialized!");
+      }
+
+      return {
+        accumulatedRate,
+        liquidationPrice,
+        generatedDebt: this.generatedDebt,
+        lockedCollateral: this.lockedCollateral,
+      };
+    } catch (error) {
+      this.log.error("Error fetching critical assessment parameters", {
+        error,
+      });
+      throw error;
     }
-
-    if (!this.generatedDebt || !this.lockedCollateral) {
-      throw new Error("Safe is not initialized!");
-    }
-
-    return {
-      accumulatedRate,
-      liquidationPrice,
-      generatedDebt: this.generatedDebt,
-      lockedCollateral: this.lockedCollateral,
-    };
   }
 
   getCriticalityRatio() {
-    const {
-      accumulatedRate,
-      liquidationPrice,
-      generatedDebt,
-      lockedCollateral,
-    } = this.getCriticalAssesmentParams();
+    try {
+      const {
+        accumulatedRate,
+        liquidationPrice,
+        generatedDebt,
+        lockedCollateral,
+      } = this.getCriticalAssesmentParams();
 
-    const ratio =
-      Number(
-        ethers.utils.formatUnits(lockedCollateral.mul(liquidationPrice), 45)
-      ) /
-      Number(ethers.utils.formatUnits(generatedDebt.mul(accumulatedRate), 45));
+      const ratio =
+        Number(
+          ethers.utils.formatUnits(lockedCollateral.mul(liquidationPrice), 45)
+        ) /
+        Number(
+          ethers.utils.formatUnits(generatedDebt.mul(accumulatedRate), 45)
+        );
 
-    // Ratio less than 1 means the safe is critical
-    return ratio;
+      // Log the criticality ratio
+      this.log.debug("Criticality ratio calculated:", ratio);
+
+      // Ratio less than 1 means the safe is critical
+      return ratio;
+    } catch (error) {
+      this.log.error("Error calculating criticality ratio", { error });
+      throw error;
+    }
   }
 
   isCritical() {
-    const {
-      accumulatedRate,
-      liquidationPrice,
-      generatedDebt,
-      lockedCollateral,
-    } = this.getCriticalAssesmentParams();
+    try {
+      const {
+        accumulatedRate,
+        liquidationPrice,
+        generatedDebt,
+        lockedCollateral,
+      } = this.getCriticalAssesmentParams();
 
-    const isCrit = lockedCollateral
-      .mul(liquidationPrice)
-      .lt(generatedDebt.mul(accumulatedRate));
+      const isCrit = lockedCollateral
+        .mul(liquidationPrice)
+        .lt(generatedDebt.mul(accumulatedRate));
 
-    return isCrit;
+      // Log whether the safe is critical
+      this.log.debug("Critical assessment:", { isCritical: isCrit });
+
+      return isCrit;
+    } catch (error) {
+      this.log.error("Error checking if safe is critical", { error });
+      throw error;
+    }
   }
 
   minBigNumber(a: ethers.BigNumber, b: ethers.BigNumber): ethers.BigNumber {
-    return a.lt(b) ? a : b;
+    try {
+      // Determine the smaller of the two provided numbers
+      const min = a.lt(b) ? a : b;
+
+      // Log the result of the comparison
+      this.log.debug("Minimum BigNumber:", { result: min.toString() });
+
+      return min;
+    } catch (error) {
+      // Log any errors that occur
+      this.log.error("Error determining minimum BigNumber", { error });
+      throw error;
+    }
   }
 
   getLimitAdjustedDebt(
@@ -187,13 +271,22 @@ export class Safe {
 
   async liquidate() {
     if (!this.canLiquidate()) {
+      this.log.error("Not liquidatable!");
       throw new Error("Not liquidatable!");
     }
-    //console.log(
-    //  "we are ready to liquidate",
-    //  this.collateral.tokenData.bytes32String,
-    //  this.address
-    //);
+
+    // Log that liquidation is about to start
+    this.log.debug("Liquidating safe", {
+      collateralSymbol: this.collateral.tokenData.symbol,
+      address: this.address,
+    });
+
+    const {
+      accumulatedRate,
+      liquidationPrice,
+      generatedDebt,
+      lockedCollateral,
+    } = this.getCriticalAssesmentParams();
 
     const liquidationEngine = this.geb.contracts.liquidationEngine;
 
@@ -208,13 +301,6 @@ export class Safe {
     //  "current on auction system coins",
     //  (await liquidationEngine.currentOnAuctionSystemCoins()).toString()
     //);
-
-    const {
-      accumulatedRate,
-      liquidationPrice,
-      generatedDebt,
-      lockedCollateral,
-    } = this.getCriticalAssesmentParams();
 
     try {
       /*console.log(
@@ -240,10 +326,17 @@ export class Safe {
       );
       const receipt = await tx?.wait();
 
+      this.log.info("Safe liquidated successfully", {
+        collateralSymbol: this.collateral.tokenData.symbol,
+        address: this.address,
+        transactionHash: receipt.transactionHash,
+      });
+
       return receipt;
-    } catch (err) {
+    } catch (error) {
       // @ts-ignore
-      console.error(err);
+      this.log.error("Error during liquidation", { error });
+      throw error;
       // @ts-ignore
       //const revertData = "0x1baf9c1c";
       //console.log("revert data is: ", revertData);
