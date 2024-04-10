@@ -7,6 +7,8 @@ import {
   defer,
   map,
 } from "rxjs";
+import { Logger } from "pino";
+import logger from "../logger";
 
 export type Task = (...args: any[]) => Promise<any>;
 
@@ -25,12 +27,15 @@ export interface Transaction {
 export class TransactionQueue {
   tasksSubject$: Subject<Transaction>;
   status$: BehaviorSubject<QueStatus>;
+  log: Logger;
 
   idleTimer: any; // Timer to track IDLE state duration
   readonly IDLE_TIMEOUT = 10000; // 10 seconds
 
   constructor(retryCount: number) {
-    console.info("Transaction Queue initiated");
+    this.log = logger.child({ module: "TransactionQueue" });
+    this.log.debug({ message: "Transaction Queue initiated" });
+
     this.tasksSubject$ = new Subject<Transaction>();
     this.status$ = new BehaviorSubject<QueStatus>(QueStatus.IDLE);
 
@@ -40,6 +45,9 @@ export class TransactionQueue {
       .pipe(
         concatMap((transaction) => {
           this.status$.next(QueStatus.WORKING);
+          this.log.debug(`Starting transaction: ${transaction.label}`, {
+            label: transaction.label,
+          });
 
           return defer(() => from(transaction.task())).pipe(
             retry({ count: retryCount, delay: 500 }),
@@ -51,20 +59,27 @@ export class TransactionQueue {
         next: (label) => {
           clearTimeout(this.idleTimer); // Clear the timer on any activity
           this.status$.next(QueStatus.IDLE);
+          this.log.debug(`Transaction completed: ${label}`, { label });
           this.startIdleTimer();
         },
         error: (err: any) => {
-          console.error(
-            `${err.label} Transaction failed after ${retryCount} retries.\n`,
-            err
+          this.log.error(
+            `${err.label} Transaction failed after ${retryCount} retries.`,
+            { retryCount, error: err }
           );
+
           this.status$.next(QueStatus.FAILED);
+          this.log.debug(`Transaction failed: ${err.label}`, {
+            label: err.label,
+          });
           this.startIdleTimer();
         },
       });
 
     this.status$.subscribe((v) => {
-      console.info(`||| Transaction Queue Status: ${QueStatus[v]}`);
+      this.log.info(`Transaction Queue Status: ${QueStatus[v]}`, {
+        status: QueStatus[v],
+      });
     });
   }
 
@@ -79,10 +94,17 @@ export class TransactionQueue {
       try {
         return await transaction.task();
       } catch (error) {
+        this.log.error(`Failed to do the transaction`, {
+          label: transaction.label,
+          transaction,
+        });
         throw { label: transaction.label, error };
       }
     };
 
     this.tasksSubject$.next({ ...transaction, task });
+    this.log.debug(`Transaction added: ${transaction.label}`, {
+      label: transaction.label,
+    });
   }
 }
