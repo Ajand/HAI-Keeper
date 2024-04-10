@@ -114,6 +114,7 @@ export class CollateralAuction {
               this.collateral.tokenData.symbol
             } with ${FormatWad(amount)} system coin`,
             auctionId: this.id.toString(),
+            amount: FormatWad(amount),
           });
           const tx = await this.contract.buyCollateral(this.id, amount);
           await tx.wait();
@@ -124,6 +125,7 @@ export class CollateralAuction {
               this.collateral.tokenData.symbol
             } with ${FormatWad(amount)} system coin`,
             auctionId: this.id.toString(),
+            amount: FormatWad(amount),
           });
         },
       });
