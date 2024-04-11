@@ -73,7 +73,7 @@ export class Keeper {
     const keyFile = KeyPassSplitter(String(this.args["--eth-key"]));
     const wallet = createWallet(keyFile).connect(this.provider);
 
-    this.transactionQueue = new TransactionQueue(10);
+    this.transactionQueue = new TransactionQueue(10, wallet.address);
 
     console.info(`Keeper will interact as this address: ${wallet.address}`);
 
@@ -91,13 +91,15 @@ export class Keeper {
     if (!this.args["--collateral-type"]) {
       this.collateral = new Collateral(
         { provider: this.provider, geb: this.geb },
-        this.geb.tokenList.WETH
+        this.geb.tokenList.WETH,
+        this.signer.address
       );
       this.collateral.init();
     } else {
       this.collateral = new Collateral(
         { provider: this.provider, geb: this.geb },
-        this.geb.tokenList[this.args["--collateral-type"]]
+        this.geb.tokenList[this.args["--collateral-type"]],
+        this.signer.address
       );
       this.collateral.init();
     }
@@ -109,6 +111,7 @@ export class Keeper {
         provider: this.provider,
         geb: this.geb,
         transactionQueue: this.transactionQueue,
+        keeperAddress: this.signer.address,
       },
       this.collateral,
       Number(this.args["--from-block"])
@@ -120,7 +123,8 @@ export class Keeper {
         geb: this.geb,
         transactionQueue: this.transactionQueue,
       },
-      this.collateral
+      this.collateral,
+      this.signer.address
     );
 
     // Setting up the keeper setup props

@@ -47,10 +47,10 @@ export const changeCollateralPrice =
     wallet: ethers.Wallet,
     geb: Geb
   ) => {
-    const chainLinkPriceFeed = await initializeChainlinkPriceFeed(
-      hre,
-      provider
-    );
+    //const chainLinkPriceFeed = await initializeChainlinkPriceFeed(
+    //  hre,
+    //  provider
+    //);
 
     const collateralByteString = collateral.tokenData.bytes32String;
     const { getWethOracle } = gebUtils(wallet);

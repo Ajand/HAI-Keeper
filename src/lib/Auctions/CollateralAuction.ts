@@ -3,7 +3,7 @@ import { ICollateralAuctionHouse } from "@hai-on-op/sdk/lib/typechained/ICollate
 import { ISAFEEngine } from "@hai-on-op/sdk/lib/typechained/ISAFEEngine.js";
 import { Collateral } from "../Collateral";
 import { Logger } from "pino";
-import logger from "../logger";
+import logger, { getLogger } from "../logger";
 
 import { FormatWad } from "../Math";
 
@@ -36,7 +36,8 @@ export class CollateralAuction {
     id: ethers.BigNumber,
     contract: ICollateralAuctionHouse,
     safeEngine: ISAFEEngine,
-    collateral: Collateral
+    collateral: Collateral,
+    keeperAddress: string
   ) {
     this.transactionQueue = transacationQueue;
     this.id = id;
@@ -45,7 +46,7 @@ export class CollateralAuction {
     this.collateral = collateral;
 
     // Create a child logger for this module
-    this.log = logger.child({
+    this.log = getLogger(keeperAddress).child({
       module: "CollateralAuction",
       id: this.id,
       contract: contract.address,

@@ -13,6 +13,7 @@ interface SafeInfrustructure {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
   transactionQueue: TransactionQueue;
+  keeperAddress?: string;
 }
 
 export class SafeHistory {
@@ -20,6 +21,7 @@ export class SafeHistory {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
   collateral: Collateral;
+  keeperAddress: string;
 
   cacheLookback = 12; // for handling block reorgs
   cacheBlock: number;
@@ -29,7 +31,7 @@ export class SafeHistory {
   log: Logger;
 
   constructor(
-    { provider, geb, transactionQueue }: SafeInfrustructure,
+    { provider, geb, transactionQueue, keeperAddress = "" }: SafeInfrustructure,
     collateral: Collateral,
     from: number
   ) {
@@ -38,6 +40,7 @@ export class SafeHistory {
     this.geb = geb;
     this.collateral = collateral;
     this.cacheBlock = from;
+    this.keeperAddress = keeperAddress;
 
     // Create a child logger for SafeHistory class with constructor parameters
     this.log = logger.child({
@@ -89,7 +92,8 @@ export class SafeHistory {
               provider: this.provider,
             },
             this.collateral,
-            safeAddress
+            safeAddress,
+            this.keeperAddress
           );
           try {
             await safe.init();

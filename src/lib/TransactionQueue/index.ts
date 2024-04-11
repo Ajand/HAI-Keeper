@@ -32,7 +32,7 @@ export class TransactionQueue {
   idleTimer: any; // Timer to track IDLE state duration
   readonly IDLE_TIMEOUT = 10000; // 10 seconds
 
-  constructor(retryCount: number) {
+  constructor(retryCount: number, keeperAddress: string = "") {
     this.log = logger.child({ module: "TransactionQueue" });
     this.log.debug({ message: "Transaction Queue initiated" });
 

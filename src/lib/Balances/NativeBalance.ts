@@ -3,7 +3,7 @@ import { merge, interval, BehaviorSubject, Subject } from "rxjs";
 import { startWith, switchMap } from "rxjs/operators";
 
 import { Logger } from "pino";
-import logger from "../logger";
+import { getLogger } from "../logger";
 
 export class NativeBalance {
   provider: ethers.providers.JsonRpcProvider;
@@ -26,7 +26,7 @@ export class NativeBalance {
     this.updateTrigger$ = new Subject<void>();
 
     //Create a child logger for this module
-    this.log = logger.child({
+    this.log = getLogger(wallet.address).child({
       module: "NativeBalance",
       walletAddress: this.wallet.address,
     });

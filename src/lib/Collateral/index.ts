@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import { Geb, TokenData } from "@hai-on-op/sdk";
 
 import { Logger } from "pino";
-import logger from "../logger";
+import { getLogger } from "../logger";
 
 interface CollateralInfrastructure {
   provider: ethers.providers.JsonRpcProvider;
@@ -33,14 +33,15 @@ export class Collateral {
 
   constructor(
     { provider, geb }: CollateralInfrastructure,
-    tokenData: TokenData
+    tokenData: TokenData,
+    keeperAddress: string = ""
   ) {
     this.provider = provider;
     this.geb = geb;
     this.tokenData = tokenData;
 
     // Create a child logger for this module
-    this.log = logger.child({
+    this.log = getLogger(keeperAddress).child({
       module: "Collateral",
       collateral: this.tokenData.symbol,
       tokenData,
@@ -137,7 +138,7 @@ export class Collateral {
           liquidationPrice: ethers.utils.formatUnits(this.liquidationPrice, 27),
         };
 
-        logger.debug({
+        this.log.debug({
           message: "Normalized collateral information obtained",
           normalizedInfo,
         });
@@ -147,7 +148,7 @@ export class Collateral {
         throw new Error("Collateral is not initialized yet.");
       }
     } catch (error) {
-      logger.error({
+      this.log.error({
         message: "Error getting normalized collateral information",
         error: error,
       });

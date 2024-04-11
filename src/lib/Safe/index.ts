@@ -6,7 +6,7 @@ import { Collateral } from "../Collateral";
 import { TransactionQueue } from "../TransactionQueue";
 
 import { Logger } from "pino";
-import logger from "../logger";
+import { getLogger } from "../logger";
 
 interface SafeInfrustructure {
   transactionQueue: TransactionQueue;
@@ -33,7 +33,8 @@ export class Safe {
   constructor(
     { provider, geb, transactionQueue }: SafeInfrustructure,
     collateral: Collateral,
-    address: string
+    address: string,
+    keeperAddress: string = ""
   ) {
     this.provider = provider;
     this.geb = geb;
@@ -42,7 +43,7 @@ export class Safe {
     this.address = address;
 
     // Create a child logger for Safe class with constructor parameters
-    this.log = logger.child({
+    this.log = getLogger(this.address).child({
       module: "Safe",
       collateralSymbol: this.collateral.tokenData.symbol,
       address: this.address,

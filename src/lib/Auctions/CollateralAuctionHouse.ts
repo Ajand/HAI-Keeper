@@ -3,7 +3,7 @@ import { Geb, TokenData } from "@hai-on-op/sdk";
 import { ICollateralAuctionHouse } from "@hai-on-op/sdk/lib/typechained/ICollateralAuctionHouse.js";
 
 import { Logger } from "pino";
-import logger from "../logger";
+import { getLogger } from "../logger";
 
 import { Collateral } from "../Collateral";
 
@@ -21,6 +21,7 @@ export class CollateralAuctionHouse {
   geb: Geb;
   collateral: Collateral;
   transactionQueue: TransactionQueue;
+  keeperAddress: string;
 
   loaded: boolean = false;
 
@@ -32,7 +33,8 @@ export class CollateralAuctionHouse {
 
   constructor(
     { provider, geb, transactionQueue }: CollateralAuctionHouseInfrastructure,
-    collateral: Collateral
+    collateral: Collateral,
+    keeperAddress: string
   ) {
     this.provider = provider;
     this.geb = geb;
@@ -44,10 +46,12 @@ export class CollateralAuctionHouse {
         this.collateral.tokenData.symbol
       ];
 
-    this.log = logger.child({
+    this.log = getLogger(keeperAddress).child({
       module: "CollateralAuctionHouse",
       collateral: this.collateral.tokenData.symbol,
     });
+
+    this.keeperAddress = keeperAddress;
   }
 
   async loadState() {
@@ -146,7 +150,8 @@ export class CollateralAuctionHouse {
             auctionId,
             this.contract,
             this.geb.contracts.safeEngine,
-            this.collateral
+            this.collateral,
+            this.keeperAddress
           );
           await auction.init();
           this.auctions.push(auction);
