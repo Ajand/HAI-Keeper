@@ -8,7 +8,7 @@ import {
   map,
 } from "rxjs";
 import { Logger } from "pino";
-import logger from "../logger";
+import { getLogger } from "../logger";
 
 export type Task = (...args: any[]) => Promise<any>;
 
@@ -33,7 +33,7 @@ export class TransactionQueue {
   readonly IDLE_TIMEOUT = 10000; // 10 seconds
 
   constructor(retryCount: number, keeperAddress: string = "") {
-    this.log = logger.child({ module: "TransactionQueue" });
+    this.log = getLogger(keeperAddress).child({ module: "TransactionQueue" });
     this.log.debug({ message: "Transaction Queue initiated" });
 
     this.tasksSubject$ = new Subject<Transaction>();
