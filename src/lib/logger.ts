@@ -18,7 +18,7 @@ export const getLogger = (keeperAddress: string) => {
         },
       }),
     },
-    pino.destination("../../logs/server.log")
+    pino.destination(`/app/logs/${keeperAddress}.log`)
   );
 
   return logger;
