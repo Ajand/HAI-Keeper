@@ -3,7 +3,7 @@ import { ICollateralAuctionHouse } from "@hai-on-op/sdk/lib/typechained/ICollate
 import { ISAFEEngine } from "@hai-on-op/sdk/lib/typechained/ISAFEEngine.js";
 import { Collateral } from "../Collateral";
 import { Logger } from "pino";
-import logger, { getLogger } from "../logger";
+import { getLogger } from "../logger";
 
 import { FormatWad } from "../Math";
 

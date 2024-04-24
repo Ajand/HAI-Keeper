@@ -7,7 +7,7 @@ import { TransactionQueue } from "../TransactionQueue";
 import { getPastSafeModifications } from "../../Keeper/EventHandlers";
 
 import { Logger } from "pino";
-import logger from "../logger";
+import { getLogger } from "../logger";
 
 interface SafeInfrustructure {
   provider: ethers.providers.JsonRpcProvider;
@@ -43,7 +43,7 @@ export class SafeHistory {
     this.keeperAddress = keeperAddress;
 
     // Create a child logger for SafeHistory class with constructor parameters
-    this.log = logger.child({
+    this.log = getLogger(keeperAddress).child({
       module: "SafeHistory",
       collateralSymbol: this.collateral.tokenData.symbol,
       cacheLookback: this.cacheLookback,
