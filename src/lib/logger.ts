@@ -7,7 +7,6 @@ const logLevel = process.env.LOG_LEVEL ? Number(process.env.LOG_LEVEL) : 30;
 export const getLogger = (KeeperFromAddress: string) => {
   const logger = pino(
     {
-      KeeperFromAddress,
       level: logLevel,
       ...ecsFormat({
         formatters: {
@@ -19,7 +18,7 @@ export const getLogger = (KeeperFromAddress: string) => {
       }),
     },
     pino.destination(`/app/logs/${KeeperFromAddress}.log`)
-  );
+  ).child({ KeeperFromAddress });
 
   return logger;
 };

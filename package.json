@@ -40,6 +40,7 @@
     "typescript": ">=4.5.0"
   },
   "dependencies": {
+    "@apollo/server": "^4.10.4",
     "@elastic/ecs-pino-format": "^1.5.0",
     "@ethersproject/experimental": "^5.7.0",
     "@hai-on-op/sdk": "1.2.3",

@@ -2,11 +2,14 @@ import { ArgsParser } from "./Keeper/Initializer";
 import Keeper from "./Keeper";
 
 import { sleep } from "./Keeper";
+import { startAPI } from "./api";
 
 const main = async () => {
   const args = process.argv.slice(2);
 
   const keeper = new Keeper(args);
+
+  await startAPI(keeper);
 
   const gracefulShutdown = async () => {
     await keeper.shutdown();
