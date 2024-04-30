@@ -1,7 +1,12 @@
 export const typeDefs = `#graphql
-  type Book {
-  }
+
 
   type Query {
+    isShuttedDown: Boolean!
   }
+
+  type Mutation {
+    exitSystemCoin: String!
+  }
+
 `;
