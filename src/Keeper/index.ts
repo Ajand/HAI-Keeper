@@ -30,9 +30,9 @@ export const sleep = async (timeout: number) => {
 };
 
 export enum KeeperStatus {
-  Initating,
-  Paused,
-  Working,
+  Initializing,
+  Started,
+  Stopping,
   Stopped,
 }
 
@@ -68,7 +68,13 @@ export class Keeper {
 
   log: Logger;
 
+  status: KeeperStatus;
+
+  lifeCycleHandler: EventListener | undefined;
+
   constructor(argsList: string[], overrides: KeeperOverrides = {}) {
+    this.status = KeeperStatus.Initializing;
+
     this.args = ArgsParser(argsList);
 
     this.provider = overrides.provider
@@ -165,6 +171,11 @@ export class Keeper {
     this.nativeBalance = new NativeBalance(this.provider, wallet, 5000);
     this.log.info(`Native balance initialized with interval 5000ms`);
 
+    this.start();
+  }
+
+  async start() {
+    this.log.info("Starting keeper");
     this.handleLifeCycle();
     this.log.info(`Lifecycle management initiated`);
   }
@@ -187,7 +198,9 @@ export class Keeper {
       const minNativeBalance = ethers.utils.parseEther("0.005");
       const minSystemCoinBalance = ethers.utils.parseEther("0.1");
 
-      this.provider.on("block", async () => {
+      this.status = KeeperStatus.Started;
+
+      this.lifeCycleHandler = async () => {
         this.log.trace("Block event received");
         const nativeBalance = this.nativeBalance.value$.getValue();
         await this.getSystemCoinBalance();
@@ -248,7 +261,9 @@ export class Keeper {
             }
           }
         }
-      });
+      };
+
+      this.provider.on("block", this.lifeCycleHandler);
       this.log.debug("Block event listener initialized");
     } catch (error) {
       this.log.error("Error handling lifecycle", { error });
@@ -334,6 +349,7 @@ export class Keeper {
   async shutdown() {
     try {
       this.log.info("Shutting down the keeper");
+      this.status = KeeperStatus.Stopping;
       this.isExiting = true;
       if (!this.keepCollateralInSafeEngine) {
         this.log.info("Keeper is set up to exit collateral on shutdown", {
@@ -355,6 +371,12 @@ export class Keeper {
           method: "shutdown",
         });
       }
+
+      if (this.lifeCycleHandler) {
+        this.provider.off("block", this.lifeCycleHandler);
+      }
+
+      this.status = KeeperStatus.Stopped;
     } catch (error) {
       this.log.error("Error during shutdown", { error });
       throw error;
