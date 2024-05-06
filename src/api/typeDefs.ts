@@ -8,6 +8,7 @@ export const typeDefs = `#graphql
 
   type Mutation {
     start: String!
+    stop: String!
 
     exitSystemCoin: String!
     exitCollateral: String!
