@@ -2,8 +2,8 @@ import Keeper from "../Keeper";
 export const resolversFactory = (keeper: Keeper) => {
   return {
     Query: {
-      isShuttedDown: () => {
-        return false;
+      status: () => {
+        return keeper.status;
       },
     },
     Mutation: {

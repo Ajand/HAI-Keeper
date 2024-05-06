@@ -1,8 +1,9 @@
 export const typeDefs = `#graphql
 
 
+
   type Query {
-    isShuttedDown: Boolean!
+    status: Int!
   }
 
   type Mutation {
