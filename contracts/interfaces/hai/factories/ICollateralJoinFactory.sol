@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {ICollateralJoin} from '../utils/ICollateralJoin.sol';
+import {IAuthorizable} from '../utils/IAuthorizable.sol';
+import {IDisableable} from '../utils/IDisableable.sol';
 
 interface ICollateralJoinFactory is IAuthorizable, IDisableable {
   // --- Events ---

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {IHaiOwnable2Step} from '@interfaces/utils/IHaiOwnable2Step.sol';
+import {IHaiOwnable2Step} from '../utils/IHaiOwnable2Step.sol';
 
 interface IHaiProxy is IHaiOwnable2Step {
   // --- Errors ---

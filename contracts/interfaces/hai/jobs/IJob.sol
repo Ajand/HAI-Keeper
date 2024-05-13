@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
+import {IStabilityFeeTreasury} from '../IStabilityFeeTreasury.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IAuthorizable} from '../utils/IAuthorizable.sol';
+import {IModifiable} from '../utils/IModifiable.sol';
 
 interface IJob is IAuthorizable, IModifiable {
   // --- Events ---

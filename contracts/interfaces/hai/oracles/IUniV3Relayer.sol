@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IBaseOracle} from './IBaseOracle.sol';
 
 interface IUniV3Relayer is IBaseOracle {
   // --- Errors ---

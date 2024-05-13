@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {IPIDController} from '@interfaces/IPIDController.sol';
-import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
-import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
+import {IPIDController} from './IPIDController.sol';
+import {IBaseOracle} from './oracles/IBaseOracle.sol';
+import {IOracleRelayer} from './IOracleRelayer.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IAuthorizable} from './utils/IAuthorizable.sol';
+import {IModifiable} from './utils/IModifiable.sol';
 
 interface IPIDRateSetter is IAuthorizable, IModifiable {
   // --- Events ---

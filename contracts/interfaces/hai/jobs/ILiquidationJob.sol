@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
+import {ILiquidationEngine} from '../ILiquidationEngine.sol';
 
-import {IJob} from '@interfaces/jobs/IJob.sol';
+import {IJob} from './IJob.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IAuthorizable} from '../utils/IAuthorizable.sol';
+import {IModifiable} from '../utils/IModifiable.sol';
 
 interface ILiquidationJob is IAuthorizable, IModifiable, IJob {
   // --- Data ---

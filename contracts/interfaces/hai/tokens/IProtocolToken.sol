@@ -5,7 +5,7 @@ import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IER
 import {IERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol';
 import {IVotes} from '@openzeppelin/contracts/governance/utils/IVotes.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IAuthorizable} from '../utils/IAuthorizable.sol';
 
 interface IProtocolToken is IERC20Metadata, IERC20Permit, IVotes, IAuthorizable {
   // --- Methods ---

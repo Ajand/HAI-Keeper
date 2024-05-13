@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
-import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';
+import {IBaseOracle} from './IBaseOracle.sol';
+import {IChainlinkOracle} from './IChainlinkOracle.sol';
 
 interface IChainlinkRelayer is IBaseOracle {
   // --- Errors ---

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
+import {ISAFEEngine} from './ISAFEEngine.sol';
+import {IProtocolToken} from './tokens/IProtocolToken.sol';
 
 interface ICommonSurplusAuctionHouse {
   // --- Events ---

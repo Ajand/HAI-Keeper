@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
-import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
+import {ISAFEEngine} from './ISAFEEngine.sol';
+import {ICoinJoin} from './utils/ICoinJoin.sol';
+import {ISystemCoin} from './tokens/ISystemCoin.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {IAuthorizable} from './utils/IAuthorizable.sol';
+import {IModifiable} from './utils/IModifiable.sol';
+import {IDisableable} from './utils/IDisableable.sol';
 
 interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---

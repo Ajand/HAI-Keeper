@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
-import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {ISAFEEngine} from './ISAFEEngine.sol';
+import {ISurplusAuctionHouse} from './ISurplusAuctionHouse.sol';
+import {IDebtAuctionHouse} from './IDebtAuctionHouse.sol';
+import {IAuthorizable} from './utils/IAuthorizable.sol';
+import {IModifiable} from './utils/IModifiable.sol';
+import {IDisableable} from './utils/IDisableable.sol';
 
 interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
-import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
+import {ISAFEEngine} from '../ISAFEEngine.sol';
+import {ILiquidationEngine} from '../ILiquidationEngine.sol';
+import {IOracleRelayer} from '../IOracleRelayer.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IAuthorizable} from '../utils/IAuthorizable.sol';
+import {IDisableable} from '../utils/IDisableable.sol';
+import {IModifiable} from '../utils/IModifiable.sol';
 
 interface IGlobalSettlement is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---

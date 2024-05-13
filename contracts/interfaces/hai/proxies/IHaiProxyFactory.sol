@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {IHaiProxy} from '@interfaces/proxies/IHaiProxy.sol';
+import {IHaiProxy} from './IHaiProxy.sol';
 
 interface IHaiProxyFactory {
   // --- Events ---

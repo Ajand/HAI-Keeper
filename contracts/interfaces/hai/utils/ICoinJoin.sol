@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
+import {ISAFEEngine} from '../ISAFEEngine.sol';
+import {ISystemCoin} from '../tokens/ISystemCoin.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {IAuthorizable} from '../utils/IAuthorizable.sol';
+import {IDisableable} from '../utils/IDisableable.sol';
 
 interface ICoinJoin is IAuthorizable, IDisableable {
   // --- Events ---

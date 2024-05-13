@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ICommonActions} from '@interfaces/proxies/actions/ICommonActions.sol';
+import {ICommonActions} from './ICommonActions.sol';
 
 interface IBasicActions is ICommonActions {
   // --- Methods ---

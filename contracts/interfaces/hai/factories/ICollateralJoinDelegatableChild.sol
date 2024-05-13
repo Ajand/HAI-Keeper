@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ICollateralJoinChild} from '@interfaces/factories/ICollateralJoinChild.sol';
+import {ICollateralJoinChild} from './ICollateralJoinChild.sol';
 
 interface ICollateralJoinDelegatableChild is ICollateralJoinChild {
   // --- Registry ---

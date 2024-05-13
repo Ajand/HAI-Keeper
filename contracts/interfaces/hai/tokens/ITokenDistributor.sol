@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
+import {IProtocolToken} from './IProtocolToken.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IAuthorizable} from '../utils/IAuthorizable.sol';
 
 interface ITokenDistributor is IAuthorizable {
   // --- Events ---

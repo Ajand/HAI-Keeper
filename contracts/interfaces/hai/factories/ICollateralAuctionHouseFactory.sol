@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
+import {ICollateralAuctionHouse} from '../ICollateralAuctionHouse.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
+import {IAuthorizable} from '../utils/IAuthorizable.sol';
+import {IModifiable} from '../utils/IModifiable.sol';
+import {IModifiablePerCollateral} from '../utils/IModifiablePerCollateral.sol';
 
 interface ICollateralAuctionHouseFactory is IAuthorizable, IModifiable, IModifiablePerCollateral {
   // --- Events ---

@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 
 import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IAuthorizable} from '../utils/IAuthorizable.sol';
 
 interface ISystemCoin is IERC20Metadata, IAuthorizable {
   /**

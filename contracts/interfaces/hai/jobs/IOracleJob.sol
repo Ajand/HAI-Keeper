@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
-import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
-import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
+import {IOracleRelayer} from '../IOracleRelayer.sol';
+import {IDelayedOracle} from '../oracles/IDelayedOracle.sol';
+import {IPIDRateSetter} from '../IPIDRateSetter.sol';
 
-import {IJob} from '@interfaces/jobs/IJob.sol';
+import {IJob} from './IJob.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IAuthorizable} from '../utils/IAuthorizable.sol';
+import {IModifiable} from '../utils/IModifiable.sol';
 
 interface IOracleJob is IAuthorizable, IModifiable, IJob {
   // --- Errors ---

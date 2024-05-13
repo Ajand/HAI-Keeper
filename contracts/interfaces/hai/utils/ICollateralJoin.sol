@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {ISAFEEngine} from '../ISAFEEngine.sol';
 import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {IAuthorizable} from './IAuthorizable.sol';
+import {IDisableable} from './IDisableable.sol';
 
 interface ICollateralJoin is IAuthorizable, IDisableable {
   // --- Events ---

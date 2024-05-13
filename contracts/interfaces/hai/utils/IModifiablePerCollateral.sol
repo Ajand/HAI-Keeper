@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IAuthorizable} from './IAuthorizable.sol';
+import {IModifiable} from './IModifiable.sol';
 
 interface IModifiablePerCollateral is IAuthorizable, IModifiable {
   // --- Events ---
