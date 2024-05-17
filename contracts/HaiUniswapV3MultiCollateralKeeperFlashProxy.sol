@@ -24,6 +24,11 @@ contract HaiUniswapV3MultiCollateralKeeperFlashProxy {
     ILiquidationEngine public liquidationEngine;
     ISAFEEngine public safeEngine;
 
+    bytes32 public collateralType;
+
+    uint256 public constant ZERO = 0;
+    uint256 public constant ONE = 1;
+
     /// @param wethAddress WETH address
     /// @param systemCoinAddress System coin address
     /// @param coinJoinAddress CoinJoin address
@@ -54,8 +59,45 @@ contract HaiUniswapV3MultiCollateralKeeperFlashProxy {
         safeEngine = ISAFEEngine(liquidationEngine.safeEngine());
     }
 
+    // --- Core Bidding and Settling Logic ---
+    /// @notice Liquidates an underwater SAFE and settles the auction right away
+    /// @dev It will revert for protected safes (those that have saviours), these need to be liquidated through the LiquidationEngine
+    /// @param collateralJoin Join address for a collateral type
+    /// @param safe A SAFE's ID
+    /// @param uniswapPoolAddress Uniswap pool address
+    /// @return auction Auction ID
+    function liquidateAndSettleSAFE(
+        ICollateralJoin collateralJoin,
+        address safe,
+        address uniswapPoolAddress
+    ) public returns (uint auction) {
+        collateralType = collateralJoin.collateralType();
+        if (
+            liquidationEngine.safeSaviours(
+                liquidationEngine.chosenSAFESaviour(collateralType, safe)
+            )
+        ) {
+            if (
+                liquidationEngine.chosenSAFESaviour(collateralType, safe) !=
+                address(0)
+            ) {
+                revert SafeIsProtected();
+            }
+        }
+
+        auction = liquidationEngine.liquidateSAFE(collateralType, safe);
+        settleAuction(collateralJoin, auction, uniswapPoolAddress);
+    }
+
+    function settleAuction(
+        ICollateralJoin collateralJoin,
+        uint auctionId,
+        address uniswapPoolAddress
+    ) public {}
+
     error NullWeth();
     error NullSystemCoin();
     error NullCoinJoin();
     error NullLiquidationEngine();
+    error SafeIsProtected();
 }

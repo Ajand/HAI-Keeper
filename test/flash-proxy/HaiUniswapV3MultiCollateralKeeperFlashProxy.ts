@@ -1,5 +1,13 @@
 import { expect } from "chai";
 import hre from "hardhat";
+import { ethers } from "ethers";
+
+import {
+  resetNetwork,
+  getProvider,
+  createFixtureWallet,
+  gebUtils,
+} from "../utils";
 
 const haiEthPair1PercentPool = "0x146b020399769339509c98B7B353d19130C150EC";
 
@@ -31,6 +39,75 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
     );
 
     return { flashSwap };
+  }
+
+  async function deployAndCreateASaviouredSafe() {
+    const [owner] = await hre.ethers.getSigners();
+
+    const { ...deployParams } = await deploy();
+    //
+    const provider = getProvider();
+    await resetNetwork();
+    const fixtureWallet = await createFixtureWallet(provider);
+    //
+    const gebUtilsResult = gebUtils(fixtureWallet);
+    //
+    const { openSafeAndGenerateDebt, geb, getUserHaiBalance, getProxy } = gebUtilsResult;
+    //
+    const collateralAmount = ethers.utils.parseEther("5").toHexString();
+    const haiAmount = ethers.utils.parseEther("10000").toHexString();
+
+    const safeAddress = await openSafeAndGenerateDebt(
+      collateralAmount,
+      haiAmount
+    );
+
+    console.log("generated safe is: ", safeAddress);
+
+    const TestSaviour = await hre.ethers.getContractFactory("TestSaviour");
+    const testSaviour = await TestSaviour.deploy();
+
+    console.log("test saviour is:", testSaviour.address);
+
+    const authorizedAccount = "0xd68e7D20008a223dD48A6076AAf5EDd4fe80a899";
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [authorizedAccount],
+    });
+
+    const signer = await hre.ethers.getSigner(authorizedAccount);
+
+    await owner.sendTransaction({
+      to: authorizedAccount,
+      value: ethers.utils.parseEther("1.0"), // Sends exactly 1.0 ether
+    });
+
+    await geb.contracts.liquidationEngine
+      //@ts-ignore
+      .connect(signer)
+      .connectSAFESaviour(testSaviour.address);
+
+    //const revertData = "0xa4d3e565";
+    //const decodedError =
+    //  geb.contracts.liquidationEngine.interface.parseError(revertData);
+    //console.log(`Transaction failed: ${decodedError.name}`);
+
+    
+    //await geb.contracts.safeEngine.approveSAFEModification()
+
+    const proxy = await getProxy()
+
+    
+    //await geb.contracts.liquidationEngine.protectSAFE(
+    //  "0x5745544800000000000000000000000000000000000000000000000000000000",
+    //  safeAddress,
+    //  testSaviour.address
+    //);
+
+    //console.log(testSaviour);
+
+    return { ...deployParams, ...gebUtilsResult, provider, fixtureWallet, geb };
   }
 
   describe("Deployment", () => {
@@ -98,5 +175,23 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
     });
   });
 
-  
+  describe("Liquidate and settle safe", async () => {
+    it("Must revert if safe has a saviour", async () => {
+      // TODO: Let's add saviour safes tests later
+      const {} = await deployAndCreateASaviouredSafe();
+    });
+  });
 });
+
+/**
+ * 
+ * 
+ *    const errorCode = "0x4d0b26ae";
+
+    // @ts-ignore
+    const revertData = errorCode;
+    const decodedError =
+      geb.contracts.safeEngine.interface.parseError(revertData);
+    console.log(`Transaction failed: ${decodedError.name}`);
+
+ */

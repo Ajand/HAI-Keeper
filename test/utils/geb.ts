@@ -6,7 +6,7 @@ import {
 } from "../DelayedOracleManipulator";
 
 export const gebUtils = (wallet: ethers.Wallet) => {
-  const geb = new Geb("optimism-sepolia", wallet);
+  const geb = new Geb("mainnet", wallet);
 
   const getWethOracle = async () => {
     const wethByteString = geb.tokenList.WETH.bytes32String;
