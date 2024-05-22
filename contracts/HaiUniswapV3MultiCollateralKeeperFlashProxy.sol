@@ -84,7 +84,7 @@ contract HaiUniswapV3MultiCollateralKeeperFlashProxy {
                 revert SafeIsProtected();
             }
         }
-
+        
         auction = liquidationEngine.liquidateSAFE(collateralType, safe);
         settleAuction(collateralJoin, auction, uniswapPoolAddress);
     }

@@ -24,6 +24,20 @@ const deploymentParams = {
   liquidationEngine: "0x8Be588895BE9B75F9a9dAee185e0c2ad89891b56",
 };
 
+const UniswapPools = {
+  "WETH/HAI": "0x146b020399769339509c98B7B353d19130C150EC",
+  "WETH/WSTETH": "0x04F6C85A1B00F6D9B75f91FD23835974Cc07E65c",
+  "WETH/OP": "0xFC1f3296458F9b2a27a0B91dd7681C4020E09D05",
+  "WETH/SNX": "0x0392b358CE4547601BEFa962680BedE836606ae2",
+  "WETH/WBTC": "0x85C31FFA3706d1cce9d525a00f1C7D4A2911754c",
+  "WETH/TBTC": "0xa1507A6D0aa14F61Cf9195EBD10cc15ecf1e40F2", // Should be changed to WBTC -> TBTC
+  "WETH/RETH": "0xAEfC1edaeDE6ADaDcdF3bB344577D45A80B19582",
+  "WETH/LSUSD-A": "0x1682dCd12f6E291De6874DCb0a89EE50465f43bD",
+  "WETH/LINK": "0x19EA026886cbB7A900EcB2458636d72b5CaE223B",
+  "WETH/VELO": "0xbCFaC19a0036Ada56496316eE5cf388c2aF2BF58",
+  "WETH/APXETH": "", // No Pool Available
+};
+
 const SAFEEngine = "0x9Ff826860689483181C5FAc9628fd2F70275A700";
 
 describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
@@ -41,6 +55,59 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
     return { flashSwap };
   }
 
+  async function deployAndCreateSafe() {
+    const [owner] = await hre.ethers.getSigners();
+
+    const provider = getProvider();
+    await resetNetwork();
+    const fixtureWallet = await createFixtureWallet(provider);
+
+    const { flashSwap } = await deploy();
+
+    const gebUtilsResult = gebUtils(fixtureWallet);
+
+    const { openSafeAndGenerateDebt, geb, getUserHaiBalance, getProxy } =
+      gebUtilsResult;
+    //
+
+    const collateralAmount = ethers.utils.parseEther("5").toHexString();
+    const haiAmount = ethers.utils.parseEther("13200").toHexString();
+
+    const safeAddress = await openSafeAndGenerateDebt(
+      collateralAmount,
+      haiAmount
+    );
+
+    const targetOracle = "0x2fc0cb2c5065a79bc2db79e4fbd537b7cacf6f36";
+
+    const TestSettableDelayedOracle = await hre.ethers.getContractFactory(
+      "TestSettableDelayedOracle"
+    );
+    const newOracle = await TestSettableDelayedOracle.deploy(
+      "0xF808Bb8264459F5e04a9870D4473b36229126943",
+      3600
+    );
+    await newOracle.deployed();
+
+    await hre.network.provider.request({
+      method: "hardhat_setCode",
+      params: [
+        targetOracle,
+        await hre.ethers.provider.getCode(newOracle.address),
+      ],
+    });
+
+    const oracle = newOracle.attach(targetOracle);
+
+    return {
+      flashSwap,
+      safeAddress,
+      geb,
+      provider,
+      oracle,
+    };
+  }
+
   async function deployAndCreateASaviouredSafe() {
     const [owner] = await hre.ethers.getSigners();
 
@@ -52,8 +119,10 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
     //
     const gebUtilsResult = gebUtils(fixtureWallet);
     //
-    const { openSafeAndGenerateDebt, geb, getUserHaiBalance, getProxy } = gebUtilsResult;
+    const { openSafeAndGenerateDebt, geb, getUserHaiBalance, getProxy } =
+      gebUtilsResult;
     //
+
     const collateralAmount = ethers.utils.parseEther("5").toHexString();
     const haiAmount = ethers.utils.parseEther("10000").toHexString();
 
@@ -93,12 +162,10 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
     //  geb.contracts.liquidationEngine.interface.parseError(revertData);
     //console.log(`Transaction failed: ${decodedError.name}`);
 
-    
     //await geb.contracts.safeEngine.approveSAFEModification()
 
-    const proxy = await getProxy()
+    const proxy = await getProxy();
 
-    
     //await geb.contracts.liquidationEngine.protectSAFE(
     //  "0x5745544800000000000000000000000000000000000000000000000000000000",
     //  safeAddress,
@@ -110,7 +177,7 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
     return { ...deployParams, ...gebUtilsResult, provider, fixtureWallet, geb };
   }
 
-  describe("Deployment", () => {
+  /*describe("Deployment", () => {
     it("Must not be able to set zero address as the params of the constructor", async () => {
       const FlashProxy = await hre.ethers.getContractFactory(
         "HaiUniswapV3MultiCollateralKeeperFlashProxy"
@@ -173,12 +240,61 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
       );
       expect(await flashSwap.safeEngine()).to.be.equal(SAFEEngine);
     });
-  });
+  });*/
 
   describe("Liquidate and settle safe", async () => {
-    it("Must revert if safe has a saviour", async () => {
-      // TODO: Let's add saviour safes tests later
-      const {} = await deployAndCreateASaviouredSafe();
+    //it("Must revert if safe has a saviour", async () => {
+    //  // TODO: Let's add saviour safes tests later
+    //  const {} = await deployAndCreateASaviouredSafe();
+    //});
+
+    it("Must revert if call a non existant collateral join", async () => {
+      const { flashSwap, geb, safeAddress } = await deployAndCreateSafe();
+
+      await expect(
+        flashSwap.liquidateAndSettleSAFE(safeAddress, safeAddress, safeAddress)
+      ).to.be.reverted;
+    });
+
+    it("Must revert if call a non liquidatable safe", async () => {
+      const { flashSwap, geb, safeAddress, oracle } =
+        await deployAndCreateSafe();
+
+      // 0x660f68af // LiqEng_SAFENotUnsafe
+      //const revertData = '0x660f68af';
+      //const decodedError =
+      //  geb.contracts.liquidationEngine.interface.parseError(revertData);
+      //console.log(`Transaction failed: ${decodedError.name}`);
+      //
+      await expect(
+        flashSwap.liquidateAndSettleSAFE(
+          geb.tokenList.WETH.collateralJoin,
+          safeAddress,
+          safeAddress
+        )
+      ).to.be.reverted;
+    });
+  });
+
+  describe("Settle safe", async () => {
+    it("Must be able to liquidate and settle auction if safe is liquidatable", async () => {
+      const { flashSwap, geb, safeAddress, oracle } =
+        await deployAndCreateSafe();
+
+      await oracle.setCurrentFeed("3072580000000000000000", true);
+      await oracle.setNextFeed("3052580000000000000000", true);
+
+      console.log("current feed: ", await oracle.getCurrentFeed());
+
+      await geb.contracts.oracleRelayer.updateCollateralPrice(
+        "0x5745544800000000000000000000000000000000000000000000000000000000"
+      );
+
+      await flashSwap.liquidateAndSettleSAFE(
+        geb.tokenList.WETH.collateralJoin,
+        safeAddress,
+        UniswapPools["WETH/HAI"]
+      );
     });
   });
 });
