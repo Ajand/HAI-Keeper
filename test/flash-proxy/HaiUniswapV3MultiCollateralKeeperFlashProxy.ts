@@ -64,6 +64,8 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
 
     const { flashSwap } = await deploy();
 
+    const weth = await hre.ethers.getContractAt("IWETH", deploymentParams.weth);
+
     const gebUtilsResult = gebUtils(fixtureWallet);
 
     const { openSafeAndGenerateDebt, geb, getUserHaiBalance, getProxy } =
@@ -71,7 +73,7 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
     //
 
     const collateralAmount = ethers.utils.parseEther("5").toHexString();
-    const haiAmount = ethers.utils.parseEther("13200").toHexString();
+    const haiAmount = ethers.utils.parseEther("12000").toHexString();
 
     const safeAddress = await openSafeAndGenerateDebt(
       collateralAmount,
@@ -105,6 +107,8 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
       geb,
       provider,
       oracle,
+      owner,
+      weth,
     };
   }
 
@@ -177,7 +181,7 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
     return { ...deployParams, ...gebUtilsResult, provider, fixtureWallet, geb };
   }
 
-  /*describe("Deployment", () => {
+  describe("Deployment", () => {
     it("Must not be able to set zero address as the params of the constructor", async () => {
       const FlashProxy = await hre.ethers.getContractFactory(
         "HaiUniswapV3MultiCollateralKeeperFlashProxy"
@@ -240,13 +244,13 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
       );
       expect(await flashSwap.safeEngine()).to.be.equal(SAFEEngine);
     });
-  });*/
+  });
 
   describe("Liquidate and settle safe", async () => {
-    //it("Must revert if safe has a saviour", async () => {
-    //  // TODO: Let's add saviour safes tests later
-    //  const {} = await deployAndCreateASaviouredSafe();
-    //});
+    it("Must revert if safe has a saviour", async () => {
+      // TODO: Let's add saviour safes tests later
+      const {} = await deployAndCreateASaviouredSafe();
+    });
 
     it("Must revert if call a non existant collateral join", async () => {
       const { flashSwap, geb, safeAddress } = await deployAndCreateSafe();
@@ -278,23 +282,27 @@ describe("Uniswap V3 Multicollateral Flash Swap Proxy", () => {
 
   describe("Settle safe", async () => {
     it("Must be able to liquidate and settle auction if safe is liquidatable", async () => {
-      const { flashSwap, geb, safeAddress, oracle } =
+      const { flashSwap, geb, safeAddress, oracle, owner, weth } =
         await deployAndCreateSafe();
 
-      await oracle.setCurrentFeed("3072580000000000000000", true);
-      await oracle.setNextFeed("3052580000000000000000", true);
-
-      console.log("current feed: ", await oracle.getCurrentFeed());
+      await oracle.setCurrentFeed("2958252220900000000000", true);
+      await oracle.setNextFeed("2958252220900000000000", true);
 
       await geb.contracts.oracleRelayer.updateCollateralPrice(
         "0x5745544800000000000000000000000000000000000000000000000000000000"
       );
+
+      const beforeCollateralBalance = await weth.balanceOf(owner.address);
 
       await flashSwap.liquidateAndSettleSAFE(
         geb.tokenList.WETH.collateralJoin,
         safeAddress,
         UniswapPools["WETH/HAI"]
       );
+
+      const afterCollateralBalance = await weth.balanceOf(owner.address);
+
+      expect(afterCollateralBalance).to.be.gt(beforeCollateralBalance);
     });
   });
 });
