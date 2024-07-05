@@ -54,6 +54,7 @@ export const gebUtils = (wallet: ethers.Wallet) => {
     await weth.approve(approveTo, amount);
   };
 
+
   const openSafeAndGenerateDebt = async (
     collateralAmount: string | number,
     haiAmount: string | number
@@ -108,6 +109,7 @@ export const gebUtils = (wallet: ethers.Wallet) => {
   };
 
   return {
+    wallet,
     geb,
     getWethOracle,
     getChainlinkRelayer,

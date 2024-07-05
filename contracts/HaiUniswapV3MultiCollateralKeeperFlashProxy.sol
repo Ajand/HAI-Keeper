@@ -104,10 +104,9 @@ contract HaiUniswapV3MultiCollateralKeeperFlashProxy {
         int256 _amount1,
         bytes calldata _data
     ) external {
-        require(
-            msg.sender == address(uniswapPair),
-            "GebUniswapV3MultiCollateralKeeperFlashProxy/invalid-uniswap-pair"
-        );
+        if (msg.sender != address(uniswapPair)) {
+            revert InvalidUniswapPair();
+        }
 
         (
             address caller,
@@ -229,6 +228,8 @@ contract HaiUniswapV3MultiCollateralKeeperFlashProxy {
     error NullSystemCoin();
     error NullCoinJoin();
     error NullLiquidationEngine();
+    
     error SafeIsProtected();
     error AlreadySettled();
+    error InvalidUniswapPair();
 }
