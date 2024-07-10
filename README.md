@@ -86,3 +86,12 @@ The Keepers get develop in 4 phases.
 - [ ] Strategy
   - [x] Fixed discount collateral auction stratetgy
   - [ ] Increasing discount collateral auction strategy
+
+HaiUniswapV3MultiCollateralKeeperFlashProxy deployed to: 0x890B58171345e098dA78f94c483b6F3564e9CD8f
+
+HaiUniswapV3MultiHopCollateralKeeperFlashProxy for WSTETH deployed to: 0xb78f8aB20AcB52117D6ef5c9c91C39A8B0cDC3Ab
+HaiUniswapV3MultiHopCollateralKeeperFlashProxy for OP deployed to: 0xBe775bb4b344FF04196D109E13ce4060b0d839c2
+HaiUniswapV3MultiHopCollateralKeeperFlashProxy for SNX deployed to: 0x442e4B4cd2Fa2ccd1C5E1A25dd1144F683feb569
+HaiUniswapV3MultiHopCollateralKeeperFlashProxy for WBTC deployed to: 0x8aa2D91Bb6d5D668641914875B55df1d62c10518
+HaiUniswapV3MultiHopCollateralKeeperFlashProxy for TBTC deployed to: 0xb15Dc3142858Dc3cc0577EB6B79CdBd0F7E3DCB9
+HaiUniswapV3MultiHopCollateralKeeperFlashProxy for RETH deployed to: 0x0191D85BA390adEA4194e81a0827e1E2dA050532
