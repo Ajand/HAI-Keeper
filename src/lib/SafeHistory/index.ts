@@ -9,10 +9,13 @@ import { getPastSafeModifications } from "../../Keeper/EventHandlers";
 import { Logger } from "pino";
 import { getLogger } from "../logger";
 
+import { FlashSwapStrategy } from "../FlashSwap/types";
+
 interface SafeInfrustructure {
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
   transactionQueue: TransactionQueue;
+  flashSwapStrategy: FlashSwapStrategy | undefined;
   keeperAddress?: string;
 }
 
@@ -23,6 +26,8 @@ export class SafeHistory {
   collateral: Collateral;
   keeperAddress: string;
 
+  flashSwapStrategy: FlashSwapStrategy | undefined;
+
   cacheLookback = 12; // for handling block reorgs
   cacheBlock: number;
 
@@ -31,7 +36,13 @@ export class SafeHistory {
   log: Logger;
 
   constructor(
-    { provider, geb, transactionQueue, keeperAddress = "" }: SafeInfrustructure,
+    {
+      provider,
+      geb,
+      transactionQueue,
+      flashSwapStrategy,
+      keeperAddress = "",
+    }: SafeInfrustructure,
     collateral: Collateral,
     from: number
   ) {
@@ -41,6 +52,8 @@ export class SafeHistory {
     this.collateral = collateral;
     this.cacheBlock = from;
     this.keeperAddress = keeperAddress;
+
+    this.flashSwapStrategy = flashSwapStrategy;
 
     // Create a child logger for SafeHistory class with constructor parameters
     this.log = getLogger(keeperAddress).child({
@@ -90,6 +103,7 @@ export class SafeHistory {
               transactionQueue: this.transactionQueue,
               geb: this.geb,
               provider: this.provider,
+              flashSwapStrategy: this.flashSwapStrategy,
             },
             this.collateral,
             safeAddress,

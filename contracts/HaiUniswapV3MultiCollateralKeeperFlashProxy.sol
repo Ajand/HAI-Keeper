@@ -228,7 +228,7 @@ contract HaiUniswapV3MultiCollateralKeeperFlashProxy {
     error NullSystemCoin();
     error NullCoinJoin();
     error NullLiquidationEngine();
-    
+
     error SafeIsProtected();
     error AlreadySettled();
     error InvalidUniswapPair();

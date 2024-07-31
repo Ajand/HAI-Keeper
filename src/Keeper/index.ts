@@ -18,6 +18,10 @@ import { Collateral, SafeHistory, CollateralAuctionHouse } from "../lib";
 
 import { WadFromRad } from "../lib/Math";
 
+import { FlashSwapStrategy } from "../lib/FlashSwap/types";
+import { flashSwapStrategyFactory } from "../lib/FlashSwap/strategyFactory";
+import { flashSwpaProxyConfigurations } from "./configs/flashSwapProxyConfig";
+
 interface KeeperOverrides {
   provider?: ethers.providers.JsonRpcProvider;
   signer?: ethers.Signer;
@@ -70,6 +74,8 @@ export class Keeper {
 
   status: KeeperStatus;
 
+  flashSwapStrategy: FlashSwapStrategy | undefined;
+
   lifeCycleHandler: EventListener | undefined;
 
   constructor(argsList: string[], overrides: KeeperOverrides = {}) {
@@ -94,7 +100,7 @@ export class Keeper {
       walletAddress: wallet.address,
     });
 
-    const testingNetwork = "optimism-sepolia";
+    const testingNetwork = "mainnet";
     const network = this.args["--network"];
     if (network) {
       this.geb = new Geb(network, this.signer);
@@ -103,24 +109,33 @@ export class Keeper {
     }
     this.log.info(`Geb initiated on the ${network} network`, { network });
 
-    if (!this.args["--collateral-type"]) {
-      this.collateral = new Collateral(
-        { provider: this.provider, geb: this.geb },
-        this.geb.tokenList.WETH,
-        this.signer.address
-      );
-      this.collateral.init();
-    } else {
-      this.collateral = new Collateral(
-        { provider: this.provider, geb: this.geb },
-        this.geb.tokenList[this.args["--collateral-type"]],
-        this.signer.address
-      );
-      this.collateral.init();
-    }
+    const inputCollateralType = this.args["--collateral-type"]
+      ? this.args["--collateral-type"]
+      : "WETH";
+
+    this.collateral = new Collateral(
+      { provider: this.provider, geb: this.geb },
+      this.geb.tokenList[inputCollateralType],
+      this.signer.address
+    );
+    this.collateral.init();
     this.log.info(`Collateral initialized: ${this.args["--collateral-type"]}`, {
       collateralType: this.args["--collateral-type"],
     });
+
+    const flashSwap = this.args["--flash-swap"];
+
+    console.log(flashSwap);
+
+    if (!!flashSwap) {
+      const flashSwapNetwork = network ? network : testingNetwork;
+
+      this.flashSwapStrategy = flashSwapStrategyFactory(
+        inputCollateralType,
+        wallet,
+        flashSwpaProxyConfigurations[flashSwapNetwork]
+      );
+    }
 
     this.chunkSize = Number(this.args["--chunk-size"]);
 
@@ -130,6 +145,7 @@ export class Keeper {
         geb: this.geb,
         transactionQueue: this.transactionQueue,
         keeperAddress: this.signer.address,
+        flashSwapStrategy: this.flashSwapStrategy,
       },
       this.collateral,
       Number(this.args["--from-block"])
@@ -208,6 +224,13 @@ export class Keeper {
         if (this.startupFinished && !this.isExiting) {
           this.log.debug("Startup finished, processing blocks");
           if (nativeBalance && nativeBalance.lt(minNativeBalance)) {
+            console.log(
+              "block received",
+              nativeBalance, 
+              minNativeBalance,
+              nativeBalance && nativeBalance.lt(minNativeBalance)
+            );
+
             // not enough native balance flow
             if (!isNotEnoughNativeBalanceLogged) {
               this.log.warn(
@@ -659,6 +682,8 @@ export class Keeper {
       } else {
         await this.collateral.init();
       }
+
+      console.log("checking safes ....");
 
       const safes = await this.safeHistory.getSafes(this.chunkSize);
 

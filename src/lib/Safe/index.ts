@@ -8,16 +8,21 @@ import { TransactionQueue } from "../TransactionQueue";
 import { Logger } from "pino";
 import { getLogger } from "../logger";
 
+import { FlashSwapStrategy } from "../FlashSwap/types";
+
 interface SafeInfrustructure {
   transactionQueue: TransactionQueue;
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
+  flashSwapStrategy: FlashSwapStrategy | undefined;
 }
 
 export class Safe {
   transactionQueue: TransactionQueue;
   provider: ethers.providers.JsonRpcProvider;
   geb: Geb;
+
+  flashSwapStrategy: FlashSwapStrategy | undefined;
 
   initialized: boolean = false;
 
@@ -31,7 +36,7 @@ export class Safe {
   log: Logger;
 
   constructor(
-    { provider, geb, transactionQueue }: SafeInfrustructure,
+    { provider, geb, transactionQueue, flashSwapStrategy }: SafeInfrustructure,
     collateral: Collateral,
     address: string,
     keeperAddress: string = ""
@@ -41,6 +46,8 @@ export class Safe {
     this.transactionQueue = transactionQueue;
     this.collateral = collateral;
     this.address = address;
+
+    this.flashSwapStrategy = flashSwapStrategy;
 
     // Create a child logger for Safe class with constructor parameters
     this.log = getLogger(this.address).child({
@@ -206,6 +213,16 @@ export class Safe {
         .mul(liquidationPrice)
         .lt(generatedDebt.mul(accumulatedRate));
 
+      console.log(
+        "checking if this is critical?",
+        isCrit,
+        String(lockedCollateral.mul(liquidationPrice)),
+        String(generatedDebt.mul(accumulatedRate)),
+        String(lockedCollateral
+          .mul(liquidationPrice)
+          .sub(generatedDebt.mul(accumulatedRate)))
+      );
+
       // Log whether the safe is critical
       this.log.debug("Critical assessment:", { isCritical: isCrit });
 
@@ -276,22 +293,90 @@ export class Safe {
       throw new Error("Not liquidatable!");
     }
 
-    // Log that liquidation is about to start
-    this.log.debug("Liquidating safe", {
-      collateralSymbol: this.collateral.tokenData.symbol,
-      address: this.address,
-    });
+    if (this.flashSwapStrategy) {
+      console.log("is there are flash swap strategy?????");
 
-    const {
-      accumulatedRate,
-      liquidationPrice,
-      generatedDebt,
-      lockedCollateral,
-    } = this.getCriticalAssesmentParams();
+      this.log.info("Liquidating and settling Safe using flash swap", {
+        collateralSymbol: this.collateral.tokenData.symbol,
+        address: this.address,
+      });
+      try {
+        await this.flashSwapStrategy.liquidateAndSettleSafe(this.address);
 
-    const liquidationEngine = this.geb.contracts.liquidationEngine;
+        console.log("liquidating with flash swap");
 
-    const liquidationEngineParams = await liquidationEngine._params();
+        this.log.info("Safe liquidated successfully using flash swap", {
+          collateralSymbol: this.collateral.tokenData.symbol,
+          address: this.address,
+        });
+      } catch (error) {
+        console.error(error);
+        // @ts-ignore
+        this.log.error("Error during liquidation with flash swap proxy", {
+          error,
+        });
+        throw error;
+      }
+    } else {
+      // Log that liquidation is about to start
+      this.log.debug("Liquidating safe", {
+        collateralSymbol: this.collateral.tokenData.symbol,
+        address: this.address,
+      });
+
+      const {
+        accumulatedRate,
+        liquidationPrice,
+        generatedDebt,
+        lockedCollateral,
+      } = this.getCriticalAssesmentParams();
+
+      const liquidationEngine = this.geb.contracts.liquidationEngine;
+
+      const liquidationEngineParams = await liquidationEngine._params();
+
+      try {
+        /*console.log(
+          `Liquidating safe: ${this.address} - ${this.collateral.tokenData.bytes32String}`,
+          this.getCriticalityRatio(),
+          this.isCritical(),
+          accumulatedRate.toString(),
+          liquidationPrice.toString(),
+          generatedDebt.toString(),
+          lockedCollateral.toString(),
+          lockedCollateral.mul(liquidationPrice).toString(),
+          generatedDebt.mul(accumulatedRate).toString(),
+          lockedCollateral
+            .mul(liquidationPrice)
+            .lt(generatedDebt.mul(accumulatedRate)),
+          lockedCollateral.mul(liquidationPrice) <
+            generatedDebt.mul(accumulatedRate)
+        );*/
+
+        const tx = await liquidationEngine.liquidateSAFE(
+          this.collateral.tokenData.bytes32String,
+          this.address
+        );
+        const receipt = await tx?.wait();
+
+        this.log.info("Safe liquidated successfully", {
+          collateralSymbol: this.collateral.tokenData.symbol,
+          address: this.address,
+          transactionHash: receipt.transactionHash,
+        });
+
+        return receipt;
+      } catch (error) {
+        // @ts-ignore
+        this.log.error("Error during liquidation", { error });
+        throw error;
+        // @ts-ignore
+        //const revertData = "0x1baf9c1c";
+        //console.log("revert data is: ", revertData);
+        //const decodedError = liquidationEngine.interface.parseError(revertData);
+        //console.log(`Transaction failed: ${decodedError.name}`);
+      }
+    }
 
     //console.log(
     //  "liquidation engine params: ",
@@ -302,47 +387,5 @@ export class Safe {
     //  "current on auction system coins",
     //  (await liquidationEngine.currentOnAuctionSystemCoins()).toString()
     //);
-
-    try {
-      /*console.log(
-        `Liquidating safe: ${this.address} - ${this.collateral.tokenData.bytes32String}`,
-        this.getCriticalityRatio(),
-        this.isCritical(),
-        accumulatedRate.toString(),
-        liquidationPrice.toString(),
-        generatedDebt.toString(),
-        lockedCollateral.toString(),
-        lockedCollateral.mul(liquidationPrice).toString(),
-        generatedDebt.mul(accumulatedRate).toString(),
-        lockedCollateral
-          .mul(liquidationPrice)
-          .lt(generatedDebt.mul(accumulatedRate)),
-        lockedCollateral.mul(liquidationPrice) <
-          generatedDebt.mul(accumulatedRate)
-      );*/
-
-      const tx = await liquidationEngine.liquidateSAFE(
-        this.collateral.tokenData.bytes32String,
-        this.address
-      );
-      const receipt = await tx?.wait();
-
-      this.log.info("Safe liquidated successfully", {
-        collateralSymbol: this.collateral.tokenData.symbol,
-        address: this.address,
-        transactionHash: receipt.transactionHash,
-      });
-
-      return receipt;
-    } catch (error) {
-      // @ts-ignore
-      this.log.error("Error during liquidation", { error });
-      throw error;
-      // @ts-ignore
-      //const revertData = "0x1baf9c1c";
-      //console.log("revert data is: ", revertData);
-      //const decodedError = liquidationEngine.interface.parseError(revertData);
-      //console.log(`Transaction failed: ${decodedError.name}`);
-    }
   }
 }

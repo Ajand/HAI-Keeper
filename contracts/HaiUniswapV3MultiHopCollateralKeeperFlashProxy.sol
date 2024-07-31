@@ -15,8 +15,6 @@ import {IWETH} from "./interfaces/IWETH.sol";
 // import IUniV3Pool
 import {IUniswapV3Pool} from "./interfaces/uniswapV3/IUniswapV3Pool.sol";
 
-import {console} from "hardhat/console.sol";
-
 contract HaiUniswapV3MultiHopCollateralKeeperFlashProxy {
     ICollateralAuctionHouse public auctionHouse;
     ISAFEEngine public safeEngine;

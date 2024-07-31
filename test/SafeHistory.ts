@@ -23,7 +23,7 @@ describe("Safe History ", () => {
     await wethCollateral.init();
 
     const safeHistory = new SafeHistory(
-      { provider, geb, transactionQueue: queue },
+      { provider, geb, transactionQueue: queue, flashSwapStrategy: undefined },
       wethCollateral,
       startingBlock
     );

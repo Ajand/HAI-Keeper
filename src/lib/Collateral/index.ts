@@ -63,6 +63,10 @@ export class Collateral {
   async updateInfo() {
     try {
       this.log.debug("Updating collateral.");
+      //console.log(
+      //  "before collateral update liquidation price: ",
+      //  ethers.utils.formatEther(this.liquidationPrice)
+      //);
       await this.getCollateralInfo();
       this.log.debug("Collateral updated.");
     } catch (error) {
