@@ -17,7 +17,7 @@ export const getLogger = (KeeperFromAddress: string) => {
         },
       }),
     },
-    pino.destination(`/Users/ajand/Projects/keepers/hai-keeper/logs/${KeeperFromAddress}.log`)
+    pino.destination(`/app/logs/${KeeperFromAddress}.log`)
   ).child({ KeeperFromAddress });
 
   return logger;
