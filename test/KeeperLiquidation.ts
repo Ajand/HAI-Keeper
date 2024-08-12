@@ -20,7 +20,8 @@ import {
 import Keeper from "../src/Keeper";
 import { Geb } from "@hai-on-op/sdk";
 
-import { Collateral } from "../src/lib";
+import { Collateral } from "./utils/Collateral";
+
 
 const ALL_ARGS_KEY_VALUE = {
   ...REQUIRED_ARGS_KEY_VALUE,
@@ -89,8 +90,8 @@ const deploymentParams = {
 
 describe("Keeper Liquidation", () => {
   beforeEach(async function () {});
-  /*
- it("Should liquidate liquidatable safes", async () => {
+
+  /*it("Should liquidate liquidatable safes", async () => {
     await resetNetwork();
 
     const provider = getProvider();
@@ -217,7 +218,7 @@ describe("Keeper Liquidation", () => {
     expect(keeper.liquidatedSafes.has(String(safe2))).to.be.false;
     expect(keeper.liquidatedSafes.has(String(safe3))).to.be.true;
     expect(keeper.liquidatedSafes.has(String(safe4))).to.be.false;
-  });
+  });*/
 
   it("Should liquidate and settle safes if flash swap is on", async () => {
     await resetNetwork();
@@ -294,9 +295,9 @@ describe("Keeper Liquidation", () => {
     console.log(beforeCollateralBalance, afterCollateralBalance);
 
     expect(afterCollateralBalance).to.be.gt(beforeCollateralBalance);
-  });*/
+  });
 
-  it("Should liquidate and settle safes if flash swap is on (OP)", async () => {
+  /*it("Should liquidate and settle safes if flash swap is on (OP)", async () => {
     const [owner] = await hre.ethers.getSigners();
 
     await resetNetwork();
@@ -517,7 +518,7 @@ describe("Keeper Liquidation", () => {
     const afterCollateralBalance = await op.balanceOf(keeper.signer.address);
 
     expect(afterCollateralBalance).to.be.gt(beforeCollateralBalance);
-  });
+  });*/
 
   /*it("Should not liquidate safes in bid only mode", async () => {
     const { provider, openSafeAndGenerateDebt, geb, fixtureWallet } =
