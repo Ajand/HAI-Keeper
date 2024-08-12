@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import { Geb } from "@hai-on-op/sdk";
 
 import { Safe } from "../Safe";
-import { Collateral } from "../Collateral";
+import { Collateral } from "../Collateral/collateral";
 import { TransactionQueue } from "../TransactionQueue";
 import { getPastSafeModifications } from "../../Keeper/EventHandlers";
 

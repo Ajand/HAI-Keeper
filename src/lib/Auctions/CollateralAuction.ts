@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { ICollateralAuctionHouse } from "@hai-on-op/sdk/lib/typechained/ICollateralAuctionHouse.js";
 import { ISAFEEngine } from "@hai-on-op/sdk/lib/typechained/ISAFEEngine.js";
-import { Collateral } from "../Collateral";
+import { Collateral } from "../Collateral/collateral";
 import { Logger } from "pino";
 import { getLogger } from "../logger";
 

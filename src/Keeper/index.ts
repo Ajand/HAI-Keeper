@@ -14,13 +14,20 @@ import { TransactionQueue } from "../lib/TransactionQueue";
 
 import { NativeBalance } from "../lib";
 
-import { Collateral, SafeHistory, CollateralAuctionHouse } from "../lib";
+import { SafeHistory, CollateralAuctionHouse } from "../lib";
 
 import { WadFromRad } from "../lib/Math";
 
 import { FlashSwapStrategy } from "../lib/FlashSwap/types";
 import { flashSwapStrategyFactory } from "../lib/FlashSwap/strategyFactory";
 import { flashSwpaProxyConfigurations } from "./configs/flashSwapProxyConfig";
+
+import {
+  Collateral,
+  createCollateralFetcherFactory,
+  CollateralFetcherType,
+  CollateralFactory,
+} from "../lib/Collateral";
 
 interface KeeperOverrides {
   provider?: ethers.providers.JsonRpcProvider;
@@ -47,10 +54,10 @@ export class Keeper {
   geb: Geb;
 
   transactionQueue: TransactionQueue;
-  collateral: Collateral;
-  safeHistory: SafeHistory;
+  collateral: Collateral | undefined;
+  safeHistory: SafeHistory | undefined;
 
-  collateralAuctionHouse: CollateralAuctionHouse;
+  collateralAuctionHouse: CollateralAuctionHouse | undefined;
   chunkSize: number;
 
   liquidatedSafes: Set<string> = new Set();
@@ -113,15 +120,7 @@ export class Keeper {
       ? this.args["--collateral-type"]
       : "WETH";
 
-    this.collateral = new Collateral(
-      { provider: this.provider, geb: this.geb },
-      this.geb.tokenList[inputCollateralType],
-      this.signer.address
-    );
-    this.collateral.init();
-    this.log.info(`Collateral initialized: ${this.args["--collateral-type"]}`, {
-      collateralType: this.args["--collateral-type"],
-    });
+    this.initializeCollateral(this.log);
 
     const flashSwap = this.args["--flash-swap"];
 
@@ -139,29 +138,31 @@ export class Keeper {
 
     this.chunkSize = Number(this.args["--chunk-size"]);
 
-    this.safeHistory = new SafeHistory(
-      {
-        provider: this.provider,
-        geb: this.geb,
-        transactionQueue: this.transactionQueue,
-        keeperAddress: this.signer.address,
-        flashSwapStrategy: this.flashSwapStrategy,
-      },
-      this.collateral,
-      Number(this.args["--from-block"])
-    );
-    this.log.info(`Safe history initialized`);
+    if (this.collateral) {
+      this.safeHistory = new SafeHistory(
+        {
+          provider: this.provider,
+          geb: this.geb,
+          transactionQueue: this.transactionQueue,
+          keeperAddress: this.signer.address,
+          flashSwapStrategy: this.flashSwapStrategy,
+        },
+        this.collateral,
+        Number(this.args["--from-block"])
+      );
+      this.log.info(`Safe history initialized`);
 
-    this.collateralAuctionHouse = new CollateralAuctionHouse(
-      {
-        provider: this.provider,
-        geb: this.geb,
-        transactionQueue: this.transactionQueue,
-      },
-      this.collateral,
-      this.signer.address
-    );
-    this.log.info(`Collateral auction house initialized`);
+      this.collateralAuctionHouse = new CollateralAuctionHouse(
+        {
+          provider: this.provider,
+          geb: this.geb,
+          transactionQueue: this.transactionQueue,
+        },
+        this.collateral,
+        this.signer.address
+      );
+      this.log.info(`Collateral auction house initialized`);
+    }
 
     // Setting up the keeper setup props
     this.isBidding = this.args["--start-auctions-only"] ? false : true;
@@ -188,6 +189,42 @@ export class Keeper {
     this.log.info(`Native balance initialized with interval 5000ms`);
 
     this.start();
+  }
+
+  initializeCollateral(logger: Logger) {
+    const inputCollateralType = this.args["--collateral-type"] || "WETH";
+
+    // Create the CollateralFetcherFactory
+    const fetcherFactory = createCollateralFetcherFactory(
+      CollateralFetcherType.GEB,
+      this.geb
+    );
+
+    // Create the CollateralFactory
+    const collateralFactory = new CollateralFactory(fetcherFactory, logger);
+
+    // Create the Collateral instance
+    this.collateral = collateralFactory.createCollateral(
+      this.geb.tokenList[inputCollateralType]
+    );
+
+    // Initialize the collateral
+    this.collateral
+      .init()
+      .then(() => {
+        this.log.info(`Collateral initialized: ${inputCollateralType}`, {
+          collateralType: inputCollateralType,
+        });
+      })
+      .catch((error) => {
+        this.log.error(
+          `Failed to initialize collateral: ${inputCollateralType}`,
+          {
+            collateralType: inputCollateralType,
+            error: error.message,
+          }
+        );
+      });
   }
 
   async start() {
@@ -226,7 +263,7 @@ export class Keeper {
           if (nativeBalance && nativeBalance.lt(minNativeBalance)) {
             console.log(
               "block received",
-              nativeBalance, 
+              nativeBalance,
               minNativeBalance,
               nativeBalance && nativeBalance.lt(minNativeBalance)
             );
@@ -255,10 +292,13 @@ export class Keeper {
                 if (this.isLiquidating) {
                   this.checkSafes();
                 }
-                if (this.collateralAuctionHouse.loaded) {
-                  await this.collateralAuctionHouse.reloadState();
-                  isNotEnoughNativeBalanceLogged = false;
+                if (this.collateralAuctionHouse) {
+                  if (this.collateralAuctionHouse.loaded) {
+                    await this.collateralAuctionHouse.reloadState();
+                    isNotEnoughNativeBalanceLogged = false;
+                  }
                 }
+
                 this.log.trace("Block processing completed");
               } catch (err) {
                 this.log.error("Error processing blocks", { error: err });
@@ -327,6 +367,7 @@ export class Keeper {
         method: "startup",
       });
 
+      // @ts-ignore
       await this.collateralAuctionHouse.loadState();
       this.log.debug("Collateral auction house state loaded", {
         method: "startup",
@@ -506,6 +547,7 @@ export class Keeper {
   async exitCollateral() {
     try {
       const collateralJoin = types.ICollateralJoin__factory.connect(
+        // @ts-ignore
         this.collateral.tokenData.collateralJoin,
         this.signer
       );
@@ -652,19 +694,21 @@ export class Keeper {
       this.log.info("Getting collateral balance.", {
         method: "GetCollateralBalance",
       });
-      this.collateralBalance =
-        await this.geb.contracts.safeEngine.tokenCollateral(
-          this.collateral.tokenData.bytes32String,
-          this.signer.address
+      if (this.collateral) {
+        this.collateralBalance =
+          await this.geb.contracts.safeEngine.tokenCollateral(
+            this.collateral.tokenData.bytes32String,
+            this.signer.address
+          );
+        this.log.info(
+          `Keeper collateral balance updated: ${this.collateralBalance}`,
+          { method: "GetCollateralBalance" }
         );
-      this.log.info(
-        `Keeper collateral balance updated: ${this.collateralBalance}`,
-        { method: "GetCollateralBalance" }
-      );
-      this.log.debug("Retrieved collateral balance successfully.", {
-        method: "GetCollateralBalance",
-        collateralBalance: this.collateralBalance.toString(),
-      });
+        this.log.debug("Retrieved collateral balance successfully.", {
+          method: "GetCollateralBalance",
+          collateralBalance: this.collateralBalance.toString(),
+        });
+      }
     } catch (error) {
       this.log.error("Error while retrieving collateral balance.", {
         error,
@@ -677,47 +721,51 @@ export class Keeper {
   async checkSafes() {
     try {
       this.log.debug("Checking safes...", { method: "CheckSafes" });
-      if (this.collateral.initialized) {
-        await this.collateral.updateInfo();
-      } else {
-        await this.collateral.init();
+      if (this.collateral) {
+        if (this.collateral.initialized) {
+          await this.collateral.updateInfo();
+        } else {
+          await this.collateral.init();
+        }
       }
 
       console.log("checking safes ....");
 
-      const safes = await this.safeHistory.getSafes(this.chunkSize);
+      if (this.safeHistory) {
+        const safes = await this.safeHistory.getSafes(this.chunkSize);
 
-      const safesArray = [...safes].map((safe) => safe[1]);
+        const safesArray = [...safes].map((safe) => safe[1]);
 
-      for (const safe of safesArray) {
-        if (safe.canLiquidate()) {
-          try {
-            const receipt = await safe.liquidate();
+        for (const safe of safesArray) {
+          if (safe.canLiquidate()) {
+            try {
+              const receipt = await safe.liquidate();
 
-            const liquidateEvent = receipt?.events?.find(
-              (ev) => ev.event === "Liquidate"
-            );
+              const liquidateEvent = receipt?.events?.find(
+                (ev) => ev.event === "Liquidate"
+              );
 
-            if (liquidateEvent?.args?._safe) {
-              this.liquidatedSafes.add(liquidateEvent?.args?._safe);
+              if (liquidateEvent?.args?._safe) {
+                this.liquidatedSafes.add(liquidateEvent?.args?._safe);
+              }
+
+              this.log.info("Safe liquidated successfully.", {
+                method: "CheckSafes",
+                safeAddress: safe.address,
+              });
+            } catch (err) {
+              this.log.error("Failed to liquidate safe.", {
+                error: err,
+                method: "CheckSafes",
+                safeAddress: safe.address,
+              });
             }
-
-            this.log.info("Safe liquidated successfully.", {
-              method: "CheckSafes",
-              safeAddress: safe.address,
-            });
-          } catch (err) {
-            this.log.error("Failed to liquidate safe.", {
-              error: err,
+          } else {
+            this.log.info("Cannot liquidate safe.", {
               method: "CheckSafes",
               safeAddress: safe.address,
             });
           }
-        } else {
-          this.log.info("Cannot liquidate safe.", {
-            method: "CheckSafes",
-            safeAddress: safe.address,
-          });
         }
       }
     } catch (error) {
@@ -742,25 +790,27 @@ export class Keeper {
 
   async handleBidding() {
     try {
-      await this.collateralAuctionHouse.handleAuctionsState();
+      if (this.collateralAuctionHouse) {
+        await this.collateralAuctionHouse.handleAuctionsState();
 
-      const auctions = this.collateralAuctionHouse.auctions;
+        const auctions = this.collateralAuctionHouse.auctions;
 
-      // Must add proper money management tool
-      for (const auction of auctions) {
-        if (!auction.deleted) {
-          await this.getSystemCoinBalance();
-          if (this.coinBalance.eq(0)) {
-            this.log.warn("System coin balance is zero. Cannot bid.", {
-              method: "HandleBidding",
-            });
-          } else {
-            await auction.buy(WadFromRad(this.coinBalance));
-            await auction.reload();
-            this.log.info("Successfully placed bid in auction.", {
-              method: "HandleBidding",
-              auctionId: auction.id,
-            });
+        // Must add proper money management tool
+        for (const auction of auctions) {
+          if (!auction.deleted) {
+            await this.getSystemCoinBalance();
+            if (this.coinBalance.eq(0)) {
+              this.log.warn("System coin balance is zero. Cannot bid.", {
+                method: "HandleBidding",
+              });
+            } else {
+              await auction.buy(WadFromRad(this.coinBalance));
+              await auction.reload();
+              this.log.info("Successfully placed bid in auction.", {
+                method: "HandleBidding",
+                auctionId: auction.id,
+              });
+            }
           }
         }
       }

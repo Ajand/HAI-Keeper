@@ -5,7 +5,7 @@ import { ICollateralAuctionHouse } from "@hai-on-op/sdk/lib/typechained/ICollate
 import { Logger } from "pino";
 import { getLogger } from "../logger";
 
-import { Collateral } from "../Collateral";
+import { Collateral } from "../Collateral/collateral";
 
 import { CollateralAuction } from "./CollateralAuction";
 import { TransactionQueue } from "../TransactionQueue";

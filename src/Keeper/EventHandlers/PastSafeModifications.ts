@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { Geb } from "@hai-on-op/sdk";
 
-import { Collateral } from "../../lib";
+import { Collateral } from "../../lib/Collateral";
 
 interface EventFetchingInfra {
   geb: Geb;

@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { Geb } from "@hai-on-op/sdk";
 
-import { Collateral } from "../Collateral";
+import { Collateral } from "../Collateral/collateral";
 
 import { TransactionQueue } from "../TransactionQueue";
 
@@ -145,8 +145,8 @@ export class Safe {
 
   getCriticalAssesmentParams() {
     try {
-      const accumulatedRate = this.collateral.accumulatedRate;
-      const liquidationPrice = this.collateral.liquidationPrice;
+      const accumulatedRate = this.collateral.getData().accumulatedRate;
+      const liquidationPrice = this.collateral.getData().liquidationPrice;
 
       if (!accumulatedRate || !liquidationPrice) {
         this.log.error("Collateral is not initialized.");
@@ -218,9 +218,11 @@ export class Safe {
         isCrit,
         String(lockedCollateral.mul(liquidationPrice)),
         String(generatedDebt.mul(accumulatedRate)),
-        String(lockedCollateral
-          .mul(liquidationPrice)
-          .sub(generatedDebt.mul(accumulatedRate)))
+        String(
+          lockedCollateral
+            .mul(liquidationPrice)
+            .sub(generatedDebt.mul(accumulatedRate))
+        )
       );
 
       // Log whether the safe is critical
