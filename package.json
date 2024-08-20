@@ -27,6 +27,7 @@
     "@types/keythereum": "^1.2.4",
     "@types/mocha": ">=9.1.0",
     "@types/node": ">=16.0.0",
+    "@types/uuid": "^10.0.0",
     "chai": "^4.2.0",
     "ethers": "^5.4.7",
     "hardhat": "^2.10.2",
@@ -53,6 +54,7 @@
     "graphql": "^16.8.1",
     "keythereum": "^2.0.0",
     "pino": "^8.20.0",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "uuid": "^10.0.0"
   }
 }
