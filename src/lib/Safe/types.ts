@@ -46,3 +46,15 @@ export interface ISafeProvider {
 export interface FlashSwapStrategy {
   liquidateAndSettleSafe(safeAddress: string): Promise<void>;
 }
+
+export interface ISafe {
+  readonly address: string;
+  readonly collateral: Collateral;
+  readonly flashSwapStrategy?: FlashSwapStrategy;
+
+  init(): Promise<void>;
+  updateInfo(): Promise<void>;
+  isCritical(): boolean;
+  canLiquidate(): boolean;
+  liquidate(): Promise<void>;
+}

@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import { TokenData } from "@hai-on-op/sdk";
 
 export interface ICollateralFetcher {
   fetchParams(tokenBytes32: string): Promise<CollateralParams>;
@@ -21,4 +22,15 @@ export interface CollateralData {
   accumulatedRate: ethers.BigNumber; // RAY
   safetyPrice: ethers.BigNumber; // RAY
   liquidationPrice: ethers.BigNumber; // RAY
+}
+
+export interface ICollateral {
+  readonly tokenData: TokenData;
+  initialized: boolean;
+
+  init(): Promise<void>;
+  updateInfo(): Promise<void>;
+  getNormalizedInfo(): Record<string, string>;
+  getParams(): CollateralParams;
+  getData(): CollateralData;
 }

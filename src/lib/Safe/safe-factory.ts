@@ -3,7 +3,7 @@ import { Geb } from "@hai-on-op/sdk";
 import { Safe } from "./safe";
 import { GebSafeProvider } from "./geb-safe-provider";
 import { Collateral, FlashSwapStrategy, ILogger } from "./types";
-import { TransactionQueue } from "../TransactionQueue";
+import { ITransactionManager } from "../TransactionQueue/types";
 
 /**
  * Factory class for creating Safe instances.
@@ -22,7 +22,7 @@ export class SafeFactory {
   constructor(
     private geb: Geb,
     private provider: ethers.providers.JsonRpcProvider,
-    private transactionQueue: TransactionQueue,
+    private transactionManager: ITransactionManager,
     private logger: ILogger,
     private flashSwapStrategy?: FlashSwapStrategy
   ) {
@@ -44,6 +44,7 @@ export class SafeFactory {
     return new Safe(
       this.safeProvider,
       this.logger,
+      this.transactionManager,
       safeAddress,
       collateral,
       this.flashSwapStrategy

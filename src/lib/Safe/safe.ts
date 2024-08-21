@@ -4,13 +4,15 @@ import {
   SafeInfo,
   ISafeProvider,
   FlashSwapStrategy,
+  ISafe,
 } from "./types";
+import { ITransactionManager } from "../TransactionQueue/types";
 
 /**
  * Represents a Safe in the system.
  * A Safe is a collateralized debt position that can be managed and potentially liquidated.
  */
-export class Safe {
+export class Safe implements ISafe {
   private safeInfo: SafeInfo | null = null;
   private initialized: boolean = false;
 
@@ -25,6 +27,7 @@ export class Safe {
   constructor(
     private safeProvider: ISafeProvider,
     private logger: ILogger,
+    private transactionManager: ITransactionManager,
     public readonly address: string,
     public readonly collateral: Collateral,
     public readonly flashSwapStrategy?: FlashSwapStrategy
@@ -108,14 +111,20 @@ export class Safe {
       if (this.flashSwapStrategy) {
         await this.flashSwapStrategy.liquidateAndSettleSafe(this.address);
       } else {
-        const receipt = await this.safeProvider.liquidateSafe(
-          this.address,
-          this.collateral.tokenData.bytes32String
+        this.transactionManager.addTransaction(
+          "Liquidate Safe",
+          async () => {
+            const receipt = await this.safeProvider.liquidateSafe(
+              this.address,
+              this.collateral.tokenData.bytes32String
+            );
+            this.logger.info("Safe liquidated successfully", {
+              address: this.address,
+              transactionHash: receipt.transactionHash,
+            });
+          },
+          [this.address, this.collateral.tokenData.label]
         );
-        this.logger.info("Safe liquidated successfully", {
-          address: this.address,
-          transactionHash: receipt.transactionHash,
-        });
       }
     } catch (error) {
       this.logger.error("Error during liquidation", { error });

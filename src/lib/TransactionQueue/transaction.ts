@@ -1,12 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
 import { EventEmitter } from "events";
 
-import { TransactionStatus, ExecutionAttempt } from "./types";
+import { TransactionStatus, ExecutionAttempt, ITransaction } from "./types";
 
 /**
  * Represents a transaction with retry capabilities.
  */
-export class Transaction extends EventEmitter {
+export class Transaction extends EventEmitter implements ITransaction {
   /** Unique identifier for the transaction */
   readonly id: string;
 

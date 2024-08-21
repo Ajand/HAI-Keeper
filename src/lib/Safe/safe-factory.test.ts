@@ -6,17 +6,22 @@ import { GebSafeProvider } from "./geb-safe-provider";
 import { Collateral, FlashSwapStrategy, ILogger } from "./types";
 import { TransactionQueue, QueStatus } from "../TransactionQueue";
 import { BehaviorSubject, Subject } from "rxjs";
+import { TransactionManager } from "../TransactionQueue/transaction-manager";
 
 //
 jest.mock("@hai-on-op/sdk");
 jest.mock("./safe");
 jest.mock("./geb-safe-provider");
 
+jest.mock("fs/promises");
+
+const testDir = "./test_data";
+const mockTransactionManager = new TransactionManager(testDir);
+
 describe("SafeFactory", () => {
   let safeFactory: SafeFactory;
   let mockGeb: jest.Mocked<Geb>;
   let mockProvider: jest.Mocked<ethers.providers.JsonRpcProvider>;
-  let mockTransactionQueue: jest.Mocked<TransactionQueue>;
   let mockLogger: jest.Mocked<ILogger>;
   let mockFlashSwapStrategy: jest.Mocked<FlashSwapStrategy>;
 
@@ -32,12 +37,6 @@ describe("SafeFactory", () => {
     // Mock provider
     mockProvider = {} as jest.Mocked<ethers.providers.JsonRpcProvider>;
 
-    // Mock TransactionQueue
-    mockTransactionQueue = {
-      tasksSubject$: new Subject(),
-      status$: new BehaviorSubject(QueStatus.IDLE),
-      addTransaction: jest.fn(),
-    } as unknown as jest.Mocked<TransactionQueue>;
 
     mockLogger = { debug: jest.fn(), error: jest.fn(), info: jest.fn() };
     mockFlashSwapStrategy = { liquidateAndSettleSafe: jest.fn() };
@@ -45,7 +44,7 @@ describe("SafeFactory", () => {
     safeFactory = new SafeFactory(
       mockGeb,
       mockProvider,
-      mockTransactionQueue,
+      mockTransactionManager,
       mockLogger,
       mockFlashSwapStrategy
     );
@@ -85,6 +84,7 @@ describe("SafeFactory", () => {
       expect(Safe).toHaveBeenCalledWith(
         expect.any(GebSafeProvider),
         mockLogger,
+        mockTransactionManager,
         safeAddress,
         mockCollateral,
         mockFlashSwapStrategy
@@ -95,7 +95,7 @@ describe("SafeFactory", () => {
       const safeFactoryWithoutFlashSwap = new SafeFactory(
         mockGeb,
         mockProvider,
-        mockTransactionQueue,
+        mockTransactionManager,
         mockLogger
       );
 
@@ -131,6 +131,7 @@ describe("SafeFactory", () => {
       expect(Safe).toHaveBeenCalledWith(
         expect.any(GebSafeProvider),
         mockLogger,
+        mockTransactionManager,
         safeAddress,
         mockCollateral,
         undefined

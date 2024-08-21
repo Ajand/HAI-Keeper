@@ -1,11 +1,14 @@
 import { EventEmitter } from "events";
 import { Transaction } from "./transaction";
-import { TransactionStatus } from "./types";
+import { TransactionStatus, ITransactionProcessor } from "./types";
 
 /**
  * Manages the processing of transactions in a queue.
  */
-export class TransactionProcessor extends EventEmitter {
+export class TransactionProcessor
+  extends EventEmitter
+  implements ITransactionProcessor
+{
   private queue: Transaction[] = [];
   private isProcessing: boolean = false;
   private currentTransaction: Transaction | null = null;

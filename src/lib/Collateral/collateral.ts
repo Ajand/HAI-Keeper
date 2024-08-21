@@ -6,12 +6,13 @@ import {
   CollateralData,
   ICollateralFetcher,
   ILogger,
+  ICollateral,
 } from "./types";
 
 /**
  * Represents a collateral in the keeper.
  */
-export class Collateral {
+export class Collateral implements ICollateral {
   private params: CollateralParams | undefined;
   private data: CollateralData | undefined;
   public initialized: boolean = false;

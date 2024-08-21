@@ -1,9 +1,9 @@
 import fs from "fs/promises";
 import path from "path";
 import { Transaction } from "./transaction";
-import { TransactionStatus } from "./types";
+import { ITransactionHistory, TransactionStatus } from "./types";
 
-export class TransactionHistory {
+export class TransactionHistory implements ITransactionHistory {
   private transactions: Transaction[] = [];
   private filePath: string;
 

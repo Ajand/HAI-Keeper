@@ -7,7 +7,10 @@ import { TransactionHistory } from "./transaction-history";
 /**
  * Manages the overall transaction system, coordinating between the processor and history.
  */
-export class TransactionManager extends EventEmitter {
+export class TransactionManager
+  extends EventEmitter
+  implements TransactionManager
+{
   /** The transaction processor instance */
   public readonly processor: TransactionProcessor;
 

@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import { TokenData } from "@hai-on-op/sdk";
+import { EventEmitter } from "events";
 
 import { Safe } from "./safe";
 import {
@@ -9,6 +10,10 @@ import {
   SafeInfo,
   FlashSwapStrategy,
 } from "./types";
+
+import { TransactionManager } from "../TransactionQueue/transaction-manager";
+
+jest.mock("fs/promises");
 
 // Mock dependencies
 const mockSafeProvider: jest.Mocked<ISafeProvider> = {
@@ -21,6 +26,10 @@ const mockLogger: jest.Mocked<ILogger> = {
   error: jest.fn(),
   info: jest.fn(),
 };
+
+const testDir = "./test_data";
+
+const mockTransactionManager = new TransactionManager(testDir);
 
 const mockTokenData: TokenData = {
   address: "0x1234567890123456789012345678901234567890",
@@ -54,7 +63,13 @@ describe("Safe", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    safe = new Safe(mockSafeProvider, mockLogger, mockAddress, mockCollateral);
+    safe = new Safe(
+      mockSafeProvider,
+      mockLogger,
+      mockTransactionManager,
+      mockAddress,
+      mockCollateral
+    );
   });
 
   describe("init", () => {
@@ -152,6 +167,7 @@ describe("Safe", () => {
       const uninitializedSafe = new Safe(
         mockSafeProvider,
         mockLogger,
+        mockTransactionManager,
         mockAddress,
         mockCollateral
       );
@@ -202,6 +218,7 @@ describe("Safe", () => {
       const safeWithFlashSwap = new Safe(
         mockSafeProvider,
         mockLogger,
+        mockTransactionManager,
         mockAddress,
         mockCollateral,
         mockFlashSwapStrategy
@@ -225,17 +242,6 @@ describe("Safe", () => {
       await expect(safe.liquidate()).rejects.toThrow(
         "Safe is not liquidatable"
       );
-    });
-
-    it("should throw an error if liquidation fails", async () => {
-      await safe.init(); // Initialize the safe
-      jest.spyOn(safe, "canLiquidate").mockReturnValue(true);
-      mockSafeProvider.liquidateSafe.mockRejectedValue(
-        new Error("Liquidation Error")
-      );
-
-      await expect(safe.liquidate()).rejects.toThrow("Liquidation failed");
-      expect(mockLogger.error).toHaveBeenCalled();
     });
   });
 });
